@@ -73,79 +73,228 @@ function displayResult(val, metaText) {
   }
 }
 
-/* ── Build steps HTML for double integral ──────── */
-function buildStepsDouble(expr, coordSystem, a, b, c, d, N, val, caseNote) {
-  const dx = (b - a) / N, dy = (d - c) / N;
+/* ── Helpers for step builders ─────────────────── */
+function _ev(fn, x, y) {
+  try { const v = fn(x, y, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E); return Number.isFinite(v) ? v : null; } catch { return null; }
+}
+function _evL(fn, t) {
+  try { const v = fn(t, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E); return Number.isFinite(v) ? v : null; } catch { return null; }
+}
+function _inner1D(fn, x, lo, hi, n, isCase1) {
+  // Compute 1D midpoint sum of inner integral for a fixed outer value
+  if (!(hi > lo)) return null;
+  const d = (hi - lo) / n; let s = 0;
+  for (let j = 0; j < n; j++) {
+    const inn = lo + (j + 0.5) * d;
+    const v = isCase1 ? _ev(fn, x, inn) : _ev(fn, inn, x);
+    if (v !== null) s += v;
+  }
+  return s * d;
+}
+function _resultBlock(val) {
   const sym = recognizeConstant(val);
-  const ax  = coordSystem === 'polar' ? 'r' : 'x';
-  const ay  = coordSystem === 'polar' ? 'θ' : 'y';
-  const jac = coordSystem === 'polar' ? '<em>Jacobian r multiplied automatically.</em>' : '';
+  return `<div class="step-block"><div class="step-block-title">Final Result</div><div class="step-content"><div class="step-final-val">≈ ${val.toFixed(8)}</div>${sym ? `<div class="step-symbolic-val">= ${sym}</div>` : '<em>No common symbolic form recognised.</em>'}</div></div>`;
+}
 
-  // Sample evaluations (4 cells)
-  let sampleRows = '';
-  const fnVars = coordSystem === 'polar'
-    ? ['r','theta','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E']
-    : ['x','y','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E'];
-  let fn;
-  try { fn = safeCompile(expr, fnVars); } catch { fn = null; }
+/* ── DUIS helpers ───────────────────────────────── */
+function toNerd(e) {
+  // Convert JS expression syntax → nerdamer syntax
+  return String(e).replace(/\*\*/g, '^').replace(/\bln\b/g, 'log');
+}
 
-  for (let i = 0; i < 2; i++) {
-    for (let j = 0; j < 2; j++) {
-      const xi = a + (i + 0.5) * dx;
-      const yi = c + (j + 0.5) * dy;
-      let fv = '—';
-      if (fn) {
-        try {
-          const raw = fn(xi, yi, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
-          fv = Number.isFinite(raw) ? raw.toFixed(6) : '—';
-        } catch {}
-      }
-      sampleRows += `<tr><td>${xi.toFixed(4)}</td><td>${yi.toFixed(4)}</td><td>${fv}</td></tr>`;
+function nSub(expr, variable, value) {
+  try {
+    const sub = {}; sub[variable] = toNerd(String(value));
+    return nerdamer(toNerd(expr), sub).toString();
+  } catch { return null; }
+}
+
+// Build 2-step DUIS HTML: inner integral wrt innerVar, then outer wrt outerVar
+function buildDUISSteps(expr, innerVar, innerLo, innerHi, outerVar, outerLo, outerHi) {
+  if (typeof nerdamer === 'undefined') return null;
+  try {
+    const nExpr = toNerd(expr);
+    const exprTex = nerdamer(nExpr).toTeX();
+    const innerHiTex = nerdamer(toNerd(innerHi)).toTeX();
+    const innerLoTex = nerdamer(toNerd(innerLo)).toTeX();
+
+    // ── Inner antiderivative ──────────────────────
+    const antI_str = nerdamer.integrate(nExpr, innerVar).toString();
+    const atHi_str = nSub(antI_str, innerVar, innerHi);
+    const atLo_str = nSub(antI_str, innerVar, innerLo);
+    if (!atHi_str || !atLo_str) return null;
+
+    const antI_tex = nerdamer(antI_str).toTeX();
+    const atHi_tex = nerdamer(atHi_str).toTeX();
+    const atLo_tex = nerdamer(atLo_str).toTeX();
+
+    let Ix_str, Ix_tex;
+    try { 
+      Ix_str = nerdamer(`(${toNerd(atHi_str)})-(${toNerd(atLo_str)})`).toString(); 
+      Ix_tex = nerdamer(Ix_str).toTeX();
     }
+    catch { 
+      Ix_str = `(${atHi_str}) - (${atLo_str})`; 
+      Ix_tex = `${atHi_tex} - \\left(${atLo_tex}\\right)`;
+    }
+
+    const innerHTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 2 — Inner Integration wrt ${innerVar}</div>
+  <div class="step-content">
+    <div class="sym-block">
+      <span class="sym-label">Antiderivative:</span><br>
+      <span class="sym-line">\\( \\int \\left( ${exprTex} \\right) d${innerVar} = ${antI_tex} + C \\)</span>
+    </div>
+    <div class="sym-block">
+      <span class="sym-label">Evaluate at upper limit &nbsp;\\( ${innerVar} = ${innerHiTex} \\):</span><br>
+      <span class="sym-line">\\( ${atHi_tex} \\)</span>
+      <span class="sym-label">Evaluate at lower limit &nbsp;\\( ${innerVar} = ${innerLoTex} \\):</span><br>
+      <span class="sym-line">\\( ${atLo_tex} \\)</span>
+      <span class="sym-label">\\( I(${outerVar}) = \\) upper − lower:</span><br>
+      <span class="sym-line">\\( \\displaystyle ${Ix_tex} \\)</span>
+    </div>
+  </div>
+</div>`;
+
+    // ── Outer antiderivative ──────────────────────
+    let outerHTML = '';
+    try {
+      const antO_str = nerdamer.integrate(toNerd(Ix_str), outerVar).toString();
+      const atOutHi_str = nSub(antO_str, outerVar, outerHi);
+      const atOutLo_str = nSub(antO_str, outerVar, outerLo);
+      
+      const antO_tex = nerdamer(antO_str).toTeX();
+      const atOutHi_tex = nerdamer(atOutHi_str).toTeX();
+      const atOutLo_tex = nerdamer(atOutLo_str).toTeX();
+      
+      const outerHiTex = nerdamer(toNerd(outerHi)).toTeX();
+      const outerLoTex = nerdamer(toNerd(outerLo)).toTeX();
+
+      let finalR_tex;
+      try { 
+        finalR_tex = nerdamer(`(${toNerd(atOutHi_str)})-(${toNerd(atOutLo_str)})`).toTeX(); 
+      }
+      catch { 
+        finalR_tex = `${atOutHi_tex} - \\left(${atOutLo_tex}\\right)`; 
+      }
+
+      outerHTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 3 — Outer Integration wrt ${outerVar}</div>
+  <div class="step-content">
+    <div class="sym-block">
+      <span class="sym-label">Antiderivative:</span><br>
+      <span class="sym-line">\\( \\int \\left( ${Ix_tex} \\right) d${outerVar} = ${antO_tex} + C \\)</span>
+    </div>
+    <div class="sym-block">
+      <span class="sym-label">Evaluate at upper limit &nbsp;\\( ${outerVar} = ${outerHiTex} \\):</span><br>
+      <span class="sym-line">\\( ${atOutHi_tex} \\)</span>
+      <span class="sym-label">Evaluate at lower limit &nbsp;\\( ${outerVar} = ${outerLoTex} \\):</span><br>
+      <span class="sym-line">\\( ${atOutLo_tex} \\)</span>
+      <span class="sym-label">Result = upper − lower:</span><br>
+      <span class="sym-line">\\( \\displaystyle ${finalR_tex} \\)</span>
+    </div>
+  </div>
+</div>`;
+    } catch { outerHTML = `<div class="step-block"><div class="step-block-title">Step 3 — Outer Integration wrt ${outerVar}</div><div class="step-content"><em>Outer integral evaluated numerically.</em></div></div>`; }
+
+    return innerHTML + outerHTML;
+  } catch { return null; }
+}
+
+
+/* ── Build steps HTML for double integral ──────── */
+function buildStepsDouble(expr, coordSystem, a, b, c, d, N, val, caseType, lowExpr, upExpr) {
+  const dx = (b - a) / N, dy = (d - c) / N;
+  let fn; try { fn = safeCompile(expr, ['x','y','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E']); } catch { fn = null; }
+
+  // POLAR
+  if (coordSystem === 'polar') {
+    let pfn; try { pfn = safeCompile(expr,['r','theta','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E']); } catch { pfn=null; }
+    let rows=''; for(let i=0;i<2;i++) for(let j=0;j<2;j++){const r=a+(i+.5)*dx,th=c+(j+.5)*dy;const fv=pfn?_ev(pfn,r,th):null;rows+=`<tr><td>${r.toFixed(4)}</td><td>${th.toFixed(4)}</td><td>${fv!==null?fv.toFixed(5):'—'}</td><td>${fv!==null?(fv*r).toFixed(5):'—'}</td></tr>`;}
+    return `<div class="step-block"><div class="step-block-title">Step 1 — Integral Setup</div><div class="step-content">∬ f(r,θ) dA = ∫<sub>${c}</sub><sup>${d}</sup> ∫<sub>${a}</sub><sup>${b}</sup> f(r,θ)·r dr dθ<br>r ∈ [${a},${b}], θ ∈ [${c},${d}]<br><em>Jacobian r included for polar.</em></div></div>
+<div class="step-block"><div class="step-block-title">Step 2 — Partition (N=${N})</div><div class="step-content">Δr=${dx.toFixed(5)}, Δθ=${dy.toFixed(5)}, cells=${N*N}</div></div>
+<div class="step-block"><div class="step-block-title">Step 3 — Midpoint Sum</div><div class="step-content">Result ≈ Σ f(rᵢ*,θⱼ*)·rᵢ*·Δr·Δθ<table class="steps-table" style="margin-top:6px"><thead><tr><th>r*</th><th>θ*</th><th>f</th><th>f·r*</th></tr></thead><tbody>${rows}</tbody></table></div></div>${_resultBlock(val)}`;
   }
 
-  return `
-  <div class="step-block">
-    <div class="step-block-title">Step 1 — Integral Setup</div>
-    <div class="step-content">
-      ∬ (${expr}) d${ax}d${ay}<br>
-      ${ax} ∈ [${a}, ${b}],  ${ay} ∈ [${c}, ${d}]<br>
-      ${jac}${caseNote ? `<em>${caseNote}</em>` : ''}
-    </div>
+  // CASE 1: ∫[a→b] [ ∫[g1(x)→g2(x)] f dy ] dx
+  if (caseType === 'case1') {
+    const duisHTML = buildDUISSteps(expr, 'y', lowExpr||'0', upExpr||'x', 'x', a, b);
+    return `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 1)</div><div class="step-content">
+∬ f(x,y) dA = ∫<sub>${a}</sub><sup>${b}</sup> [ ∫<sub>${lowExpr}</sub><sup>${upExpr}</sup> f(x,y) <strong>dy</strong> ] <strong>dx</strong><br>
+Outer: x ∈ [${a}, ${b}] (constant) &nbsp;|&nbsp; Inner: y from ${lowExpr} to ${upExpr}
+</div></div>
+${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
+${_resultBlock(val)}`;
+  }
+
+  // CASE 2: ∫[c→d] [ ∫[h1(y)→h2(y)] f dx ] dy
+  if (caseType === 'case2') {
+    const duisHTML = buildDUISSteps(expr, 'x', lowExpr||'0', upExpr||'y', 'y', c, d);
+    return `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 2)</div><div class="step-content">
+∬ f(x,y) dA = ∫<sub>${c}</sub><sup>${d}</sup> [ ∫<sub>${lowExpr}</sub><sup>${upExpr}</sup> f(x,y) <strong>dx</strong> ] <strong>dy</strong><br>
+Outer: y ∈ [${c}, ${d}] (constant) &nbsp;|&nbsp; Inner: x from ${lowExpr} to ${upExpr}
+</div></div>
+${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
+${_resultBlock(val)}`;
+  }
+
+  // CASE 4: rectangular + separable
+  if (caseType === 'case4') {
+    // Determine the separate functions approximately by evaluating
+    let stepHTML = '';
+    if (typeof nerdamer !== 'undefined') {
+      try {
+        const nExpr = toNerd(expr);
+        // Find X(x) and Y(y) symbolically if possible. For simplicity, just show DUIS as independent integrals.
+        // Or we can just use DUIS standard output but change the titles.
+        stepHTML = `
+<div class="step-block"><div class="step-block-title">Step 2 — Integrate X(x) wrt x</div><div class="step-content">
+  <div class="sym-block">
+    <span class="sym-line">Iₓ = ∫<sub>${a}</sub><sup>${b}</sup> X(x) dx</span>
+    <span class="sym-line">Evaluate independently over x.</span>
   </div>
-  <div class="step-block">
-    <div class="step-block-title">Step 2 — Partition  (N = ${N} per axis)</div>
-    <div class="step-content">
-      Δ${ax} = (${b} − ${a}) / ${N} = <strong>${dx.toFixed(6)}</strong><br>
-      Δ${ay} = (${d} − ${c}) / ${N} = <strong>${dy.toFixed(6)}</strong><br>
-      Total cells = ${N} × ${N} = ${N * N}
-    </div>
+</div></div>
+<div class="step-block"><div class="step-block-title">Step 3 — Integrate Y(y) wrt y</div><div class="step-content">
+  <div class="sym-block">
+    <span class="sym-line">I_y = ∫<sub>${c}</sub><sup>${d}</sup> Y(y) dy</span>
+    <span class="sym-line">Evaluate independently over y.</span>
   </div>
-  <div class="step-block">
-    <div class="step-block-title">Step 3 — Midpoint Rule</div>
-    <div class="step-content">
-      ${ax}ᵢ* = ${a} + (i + 0.5) · Δ${ax}<br>
-      ${ay}ⱼ* = ${c} + (j + 0.5) · Δ${ay}<br>
-      Result ≈ Σᵢ Σⱼ f(${ax}ᵢ*, ${ay}ⱼ*) · Δ${ax} · Δ${ay}
-    </div>
-  </div>
-  <div class="step-block">
-    <div class="step-block-title">Step 4 — Sample Evaluations (4 of ${N*N})</div>
-    <div class="step-content">
-      <table class="steps-table">
-        <thead><tr><th>${ax}*</th><th>${ay}*</th><th>f(${ax}*,${ay}*)</th></tr></thead>
-        <tbody>${sampleRows}</tbody>
-      </table>
-    </div>
-  </div>
-  <div class="step-block">
-    <div class="step-block-title">Step 5 — Final Result</div>
-    <div class="step-content">
-      <div class="step-final-val">≈ ${val.toFixed(8)}</div>
-      ${sym ? `<div class="step-symbolic-val">= ${sym}</div>` : '<em>No common symbolic form recognised.</em>'}
-    </div>
-  </div>`;
+</div></div>
+<div class="step-block"><div class="step-block-title">Step 4 — Multiply: Result = Iₓ × I_y</div><div class="step-content">
+  Combine the two independent 1D integrals.
+</div></div>`;
+      } catch (e) {
+        stepHTML = '';
+      }
+    }
+    
+    // As a fallback and standard implementation, we can just use the DUIS logic to calculate
+    const duisHTML = buildDUISSteps(expr, 'y', c, d, 'x', a, b);
+
+    return `<div class="step-block"><div class="step-block-title">Step 1 — Separable Form (Case 4)</div><div class="step-content">
+f(x,y) = X(x)·Y(y) → ∬ f dA = [ ∫<sub>${a}</sub><sup>${b}</sup> X(x) dx ] × [ ∫<sub>${c}</sub><sup>${d}</sup> Y(y) dy ]<br>
+Both limits are constant → integral separates into two independent 1D integrals.
+</div></div>
+${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
+${_resultBlock(val)}`;
+  }
+
+  // CASE 3: rectangular, non-separable
+  if (caseType === 'case3' || caseType === undefined) {
+    const duisHTML = buildDUISSteps(expr, 'y', c, d, 'x', a, b);
+    return `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 3)</div><div class="step-content">
+∬ f(x,y) dA = ∫<sub>${a}</sub><sup>${b}</sup> [ ∫<sub>${c}</sub><sup>${d}</sup> f(x,y) <strong>dy</strong> ] <strong>dx</strong><br>
+Both limits are constant → order can be reversed (Fubini's theorem).<br>
+Chosen order: integrate <strong>wrt y first</strong> (inner), then <strong>wrt x</strong> (outer).
+</div></div>
+${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
+${_resultBlock(val)}`;
+  }
+
 }
+
 
 /* ── Build steps HTML for triple integral ──────── */
 function buildStepsTriple(expr, coordSystem, a, b, c, d, e, f, N, val) {
@@ -198,6 +347,10 @@ function showSteps(html) {
   content.innerHTML  = html;
   content.classList.remove('hidden');
   document.getElementById('stepsToggle').classList.remove('collapsed');
+  
+  if (window.MathJax) {
+    MathJax.typesetPromise([content]).catch((err) => console.log('MathJax error: ', err));
+  }
 }
 
 function normalizeExpression(input) {
@@ -753,7 +906,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           fn(r, theta, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E) * r;
         const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
         displayResult(val, `Polar · Jacobian r · ${steps}×${steps} cells`);
-        showSteps(buildStepsDouble(expr, 'polar', a, b, c, d, steps, val, ''));
+        showSteps(buildStepsDouble(expr, 'polar', a, b, c, d, steps, val, 'polar', '', ''));
         vizContext = { mode: "double", coordSystem, expr, a, b, c, d };
       } else {
         const fn = safeCompile(expr, ["x", "y", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
@@ -778,7 +931,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             "case1"
           );
           displayResult(val, `Case 1: outer x∈[${a},${b}], inner y = [g₁(x), g₂(x)]`);
-          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, 0, 1, steps, val, `y-limits: [${lowExpr}, ${upExpr}]`));
+          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, 0, 1, steps, val, 'case1', lowExpr, upExpr));
           const range = estimateInnerRange(
             a,
             b,
@@ -817,7 +970,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             "case2"
           );
           displayResult(val, `Case 2: outer y∈[${c},${d}], inner x = [h₁(y), h₂(y)]`);
-          showSteps(buildStepsDouble(expr, 'cartesian2d', 0, 1, c, d, steps, val, `x-limits: [${lowExpr}, ${upExpr}]`));
+          showSteps(buildStepsDouble(expr, 'cartesian2d', 0, 1, c, d, steps, val, 'case2', lowExpr, upExpr));
           const range = estimateInnerRange(
             c,
             d,
@@ -844,7 +997,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           }
           const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
           displayResult(val, `Case 4 (separable): x∈[${a},${b}], y∈[${c},${d}]`);
-          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'Separable f(x,y) = X(x)·Y(y)'));
+          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'case4', '', ''));
           vizContext = { mode: "double", coordSystem, expr, a, b, c, d, doubleCase };
         } else {
           const c = parseNumber("yMin");
@@ -854,7 +1007,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           }
           const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
           displayResult(val, `Case 3 (rectangular): x∈[${a},${b}], y∈[${c},${d}]`);
-          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'Both limits constant'));
+          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'case3', '', ''));
           vizContext = { mode: "double", coordSystem, expr, a, b, c, d, doubleCase };
         }
       }
