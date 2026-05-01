@@ -3,219 +3,398 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Virtual Labs | Double and Triple Integration</title>
+  <title>Virtual Labs | Multiple Integrals</title>
+  <meta name="description" content="Interactive virtual lab for Engineering Mathematics – Multiple Integrals." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="hero">
-    <div class="container">
-      <p class="kicker">Department of Information Technology</p>
-      <h1>Double and Triple Integration</h1>
-      <p class="lead">
-        Explore area, volume, and mass calculations using iterated integrals with an
-        interactive numerical integration simulator.
-      </p>
-      <p class="meta-line">Virtual Laboratory Module | Numerical Methods</p>
-    </div>
-  </header>
+<div class="app-shell">
 
-  <main class="container lab-layout">
-    <nav class="tabs" aria-label="Virtual lab sections">
-      <button class="tab-btn active" data-tab="aimTab" type="button">Aim</button>
-      <button class="tab-btn" data-tab="pretestTab" type="button">Pretest</button>
-      <button class="tab-btn" data-tab="theoryTab" type="button">Theory</button>
-      <button class="tab-btn" data-tab="solverTab" type="button">Simulator</button>
-      <button class="tab-btn" data-tab="posttestTab" type="button">Posttest</button>
-      <button class="tab-btn" data-tab="referencesTab" type="button">References</button>
-      <button class="tab-btn" data-tab="contributorsTab" type="button">Contributors</button>
-      <button class="tab-btn" data-tab="feedbackTab" type="button">Feedback</button>
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">VL</div>
+      <div>
+        <h1>Virtual Labs</h1>
+        <p>Engineering Mathematics</p>
+      </div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <nav class="tabs" aria-label="Lab sections">
+      <button class="tab-btn active" data-tab="aimTab" type="button"><span class="tab-icon">🎯</span>Aim</button>
+      <button class="tab-btn" data-tab="pretestTab" type="button"><span class="tab-icon">📝</span>Pretest</button>
+      <button class="tab-btn" data-tab="theoryTab" type="button"><span class="tab-icon">📚</span>Theory</button>
+      <button class="tab-btn" data-tab="solverTab" type="button"><span class="tab-icon">⚡</span>Simulation</button>
+      <button class="tab-btn" data-tab="posttestTab" type="button"><span class="tab-icon">✅</span>Posttest</button>
+      <button class="tab-btn" data-tab="referencesTab" type="button"><span class="tab-icon">🔗</span>References</button>
+      <button class="tab-btn" data-tab="contributorsTab" type="button"><span class="tab-icon">👥</span>Contributors</button>
+      <button class="tab-btn" data-tab="feedbackTab" type="button"><span class="tab-icon">💬</span>Feedback</button>
     </nav>
+    <div class="sidebar-footer">Multiple Integrals · EM</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="content-area">
+    <header class="page-head">
+      <h2>Multiple Integrals</h2>
+      <div class="page-head-badge">Engineering Mathematics</div>
+    </header>
 
     <div class="tab-content">
-    <section class="card tab-panel active" id="aimTab">
-      <h2>Aim</h2>
-      <p>
-        To understand and compute double and triple integrals over rectangular regions
-        using numerical methods and interpret their physical meaning.
-      </p>
-    </section>
 
-    <section class="card tab-panel" id="pretestTab">
-      <h2>Pretest - Assess Your Prerequisite Knowledge</h2>
-      <form id="pretestForm">
-        <div class="question">
-          <p>1) A double integral of f(x,y) over a region represents:</p>
-          <label><input type="radio" name="pre1" value="0" required /> Derivative with respect to y only</label>
-          <label><input type="radio" name="pre1" value="1" /> Volume under a surface over a region</label>
-          <label><input type="radio" name="pre1" value="0" /> Slope of a curve</label>
+      <!-- AIM -->
+      <section class="tab-panel active" id="aimTab">
+        <div class="aim-hero">
+          <div class="aim-icon">∫∫</div>
+          <div>
+            <h2 class="section-title">Aim of this Experiment</h2>
+            <p class="section-desc">To understand double and triple integration, perform conversion of double integrals into polar form, and apply multiple integrals to compute area and volume, including Dirichlet's theorem.</p>
+          </div>
         </div>
-        <div class="question">
-          <p>2) The order of integration in a rectangular region can be:</p>
-          <label><input type="radio" name="pre2" value="0" required /> Only dx then dy</label>
-          <label><input type="radio" name="pre2" value="1" /> dx then dy or dy then dx</label>
-          <label><input type="radio" name="pre2" value="0" /> Not defined</label>
+        <p style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:14px;font-weight:700;">Scope Covered</p>
+        <div class="scope-grid">
+          <div class="scope-card"><div class="scope-num">01</div><p>Double integration over plane regions</p></div>
+          <div class="scope-card"><div class="scope-num">02</div><p>Conversion of double integrals into polar form</p></div>
+          <div class="scope-card"><div class="scope-num">03</div><p>Application of double integration to area</p></div>
+          <div class="scope-card"><div class="scope-num">04</div><p>Triple integration over solid regions</p></div>
+          <div class="scope-card"><div class="scope-num">05</div><p>Dirichlet's theorem and Gamma function applications</p></div>
+          <div class="scope-card"><div class="scope-num">06</div><p>Application of triple integration to volume</p></div>
         </div>
-        <div class="question">
-          <p>3) Triple integration in Cartesian coordinates is written as:</p>
-          <label><input type="radio" name="pre3" value="1" required /> ∫∫∫ f(x,y,z) dV</label>
-          <label><input type="radio" name="pre3" value="0" /> ∫ f(x) dx</label>
-          <label><input type="radio" name="pre3" value="0" /> Σ f(i,j,k)</label>
-        </div>
-        <button type="submit">Submit Pretest</button>
-      </form>
-      <p id="pretestResult" class="result muted">Attempt all questions and submit.</p>
-    </section>
+      </section>
 
-    <section class="card tab-panel" id="theoryTab">
-      <h2>Theory of Double and Triple Integration</h2>
-      <h3>Double Integration</h3>
-      <p>
-        A double integral accumulates values of a function of two variables over a
-        2D region R:
-      </p>
-      <p class="formula">∬<sub>R</sub> f(x, y) dA</p>
-      <p>
-        For a rectangular region x ∈ [a, b], y ∈ [c, d], it can be evaluated as:
-      </p>
-      <p class="formula">∫<sub>c</sub><sup>d</sup> ∫<sub>a</sub><sup>b</sup> f(x, y) dx dy</p>
+      <!-- PRETEST -->
+      <section class="tab-panel" id="pretestTab">
+        <div class="quiz-header">
+          <h2 class="section-title">Pretest</h2>
+          <p class="section-desc">Assess your prerequisite knowledge before the experiment.</p>
+        </div>
+        <form id="pretestForm" class="quiz-form">
+          <div class="question-card">
+            <div class="question-num">Q1</div>
+            <p class="question-text">A double integral of f(x,y) over a region represents:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre1" value="0" required /><span>Derivative with respect to y only</span></label>
+              <label class="option-card"><input type="radio" name="pre1" value="1" /><span>Accumulation over a region (e.g., area/volume interpretation)</span></label>
+              <label class="option-card"><input type="radio" name="pre1" value="0" /><span>Slope of a curve</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q2</div>
+            <p class="question-text">The Jacobian factor in polar coordinates is:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre2" value="0" required /><span>1/r</span></label>
+              <label class="option-card"><input type="radio" name="pre2" value="1" /><span>r</span></label>
+              <label class="option-card"><input type="radio" name="pre2" value="0" /><span>r²</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q3</div>
+            <p class="question-text">When converting ∬ f(x,y) dA to polar form, the area element dA becomes:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre3" value="0" required /><span>dr dθ</span></label>
+              <label class="option-card"><input type="radio" name="pre3" value="1" /><span>r dr dθ</span></label>
+              <label class="option-card"><input type="radio" name="pre3" value="0" /><span>r² dr dθ</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q4</div>
+            <p class="question-text">The area of a planar region R can be found using:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre4" value="1" required /><span>∬<sub>R</sub> 1 dA</span></label>
+              <label class="option-card"><input type="radio" name="pre4" value="0" /><span>∫ 1 dx only</span></label>
+              <label class="option-card"><input type="radio" name="pre4" value="0" /><span>∭ 1 dV for any region</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q5</div>
+            <p class="question-text">Triple integration in Cartesian coordinates is written as:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre5" value="1" required /><span>∫∫∫ f(x,y,z) dV</span></label>
+              <label class="option-card"><input type="radio" name="pre5" value="0" /><span>∫ f(x) dx</span></label>
+              <label class="option-card"><input type="radio" name="pre5" value="0" /><span>Σ f(i,j,k)</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q6</div>
+            <p class="question-text">The volume of a solid region V can be found using:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre6" value="1" required /><span>∭<sub>V</sub> 1 dV</span></label>
+              <label class="option-card"><input type="radio" name="pre6" value="0" /><span>∬<sub>R</sub> 1 dA only</span></label>
+              <label class="option-card"><input type="radio" name="pre6" value="0" /><span>∫ 1 dz only</span></label>
+            </div>
+          </div>
+          <div class="quiz-actions"><button type="submit" class="btn btn-primary">Submit Pretest</button></div>
+        </form>
+        <div id="pretestResult" class="quiz-result hidden"></div>
+      </section>
 
-      <h3>Triple Integration</h3>
-      <p>
-        A triple integral accumulates values of a function of three variables over a
-        3D region V:
-      </p>
-      <p class="formula">∭<sub>V</sub> f(x, y, z) dV</p>
-      <p>
-        In a box-shaped region x ∈ [a, b], y ∈ [c, d], z ∈ [e, f], we write:
-      </p>
-      <p class="formula">∫<sub>e</sub><sup>f</sup> ∫<sub>c</sub><sup>d</sup> ∫<sub>a</sub><sup>b</sup> f(x, y, z) dx dy dz</p>
+      <!-- THEORY -->
+      <section class="tab-panel" id="theoryTab">
+        <h2 class="section-title">Theory: Multiple Integrals</h2>
+        <p class="section-desc">Multiple integrals extend single-variable integration to compute accumulation over regions in 2D and 3D.</p>
 
-      <h3>Applications</h3>
-      <ul>
-        <li>Area and volume computation</li>
-        <li>Mass and center of mass with density functions</li>
-        <li>Heat and probability distributions in multiple dimensions</li>
-      </ul>
-    </section>
+        <div class="theory-section">
+          <h3 class="theory-heading"><span class="theory-num">1</span>Double Integration</h3>
+          <div class="formula-block">I = ∬<sub>R</sub> f(x,y) dA</div>
+          <p>A double integral adds up values of a function over a plane region R, evaluated as an <strong>iterated integral</strong>.</p>
+          <div class="formula-block">∬<sub>R</sub> f(x,y) dA = ∫<sub>a</sub><sup>b</sup> ∫<sub>g₁(x)</sub><sup>g₂(x)</sup> f(x,y) dy dx</div>
+          <div class="steps-list">
+            <div class="step"><span class="step-num">1</span><span>Sketch/identify the region R from limits.</span></div>
+            <div class="step"><span class="step-num">2</span><span>Decide the integration order (dy dx or dx dy).</span></div>
+            <div class="step"><span class="step-num">3</span><span>Evaluate inner integral, then outer integral.</span></div>
+          </div>
+          <div class="formula-block example"><span class="formula-label">Example</span>∬<sub>0≤x≤1, 0≤y≤2</sub> (x+y) dA = ∫<sub>0</sub><sup>1</sup> ∫<sub>0</sub><sup>2</sup> (x+y) dy dx</div>
+        </div>
 
-    <section class="card tab-panel" id="solverTab">
-      <h2>Interactive Double/Triple Integral Solver</h2>
-      <p>Enter a function and limits. The tool uses midpoint Riemann sums.</p>
+        <div class="theory-section">
+          <h3 class="theory-heading"><span class="theory-num">2</span>Conversion to Polar Form</h3>
+          <div class="formula-block">x = r cosθ,&nbsp; y = r sinθ,&nbsp; dA = r dr dθ</div>
+          <div class="formula-block">∬<sub>R</sub> f(x,y) dA = ∫∫ f(r cosθ, r sinθ) · r dr dθ</div>
+          <div class="steps-list">
+            <div class="step"><span class="step-num">→</span><span><strong>Convert region:</strong> describe R using r and θ bounds.</span></div>
+            <div class="step"><span class="step-num">→</span><span><strong>Convert function:</strong> substitute x = r cosθ, y = r sinθ.</span></div>
+            <div class="step"><span class="step-num">→</span><span><strong>Include Jacobian r</strong> — essential for correct result.</span></div>
+          </div>
+          <div class="formula-block example"><span class="formula-label">Disk Example</span>∬<sub>x²+y²≤a²</sub> 1 dA = ∫<sub>0</sub><sup>2π</sup> ∫<sub>0</sub><sup>a</sup> r dr dθ = πa²</div>
+        </div>
 
-      <div class="grid">
-        <div>
-          <label for="mode">Integral Type</label>
-          <select id="mode">
-            <option value="double">Double Integral</option>
-            <option value="triple">Triple Integral</option>
-          </select>
+        <div class="theory-section">
+          <h3 class="theory-heading"><span class="theory-num">3</span>Application to Area</h3>
+          <div class="formula-block">Area(R) = ∬<sub>R</sub> 1 dA = ∫<sub>α</sub><sup>β</sup> ∫<sub>r₁(θ)</sub><sup>r₂(θ)</sup> r dr dθ</div>
+          <div class="formula-block example"><span class="formula-label">Quarter Circle</span>Area = ∫<sub>0</sub><sup>π/2</sup> ∫<sub>0</sub><sup>a</sup> r dr dθ = πa²/4</div>
         </div>
-        <div>
-          <label for="funcInput">Function f</label>
-          <input id="funcInput" type="text" value="x*y" />
-        </div>
-        <div>
-          <label for="xMin">x min</label>
-          <input id="xMin" type="number" step="any" value="0" />
-        </div>
-        <div>
-          <label for="xMax">x max</label>
-          <input id="xMax" type="number" step="any" value="1" />
-        </div>
-        <div>
-          <label for="yMin">y min</label>
-          <input id="yMin" type="number" step="any" value="0" />
-        </div>
-        <div>
-          <label for="yMax">y max</label>
-          <input id="yMax" type="number" step="any" value="1" />
-        </div>
-        <div id="zMinWrap" class="hidden">
-          <label for="zMin">z min</label>
-          <input id="zMin" type="number" step="any" value="0" />
-        </div>
-        <div id="zMaxWrap" class="hidden">
-          <label for="zMax">z max</label>
-          <input id="zMax" type="number" step="any" value="1" />
-        </div>
-        <div>
-          <label for="steps">Subdivisions per axis</label>
-          <input id="steps" type="number" min="2" max="200" value="40" />
-        </div>
-      </div>
 
-      <div class="actions">
-        <button id="solveBtn">Compute Integral</button>
-        <button id="exampleBtn" type="button">Load Example</button>
-        <button id="resetBtn" type="button">Reset</button>
-      </div>
-
-      <h3>Result</h3>
-      <p id="integralResult" class="result">Ready</p>
-      <p id="integralMeta" class="muted">Use valid JavaScript expression, e.g. <code>x*y + z*z</code>.</p>
-    </section>
-
-    <section class="card tab-panel" id="posttestTab">
-      <h2>Posttest - Practical Problem Solving</h2>
-      <form id="posttestForm">
-        <div class="question">
-          <p>1) Evaluate ∬(x + y) dA over x:[0,1], y:[0,1].</p>
-          <label><input type="radio" name="post1" value="0" required /> 0.5</label>
-          <label><input type="radio" name="post1" value="1" /> 1</label>
-          <label><input type="radio" name="post1" value="0" /> 2</label>
+        <div class="theory-section">
+          <h3 class="theory-heading"><span class="theory-num">4</span>Triple Integration</h3>
+          <div class="formula-block">J = ∭<sub>V</sub> f(x,y,z) dV = ∫∫∫ f(x,y,z) dz dy dx</div>
+          <div class="steps-list">
+            <div class="step"><span class="step-num">1</span><span>Describe solid V using inequalities or projections.</span></div>
+            <div class="step"><span class="step-num">2</span><span>Choose integration order with simplest bounds.</span></div>
+            <div class="step"><span class="step-num">3</span><span>Integrate: inner → middle → outer.</span></div>
+          </div>
         </div>
-        <div class="question">
-          <p>2) If f(x,y,z)=1 over a unit cube [0,1]^3, then ∭f dV equals:</p>
-          <label><input type="radio" name="post2" value="0" required /> 0</label>
-          <label><input type="radio" name="post2" value="1" /> 1</label>
-          <label><input type="radio" name="post2" value="0" /> 3</label>
+
+        <div class="theory-section">
+          <h3 class="theory-heading"><span class="theory-num">5</span>Dirichlet's Theorem</h3>
+          <p>Useful for integrals over simplex regions (x,y,z ≥ 0, x+y+z ≤ a). Converts integrals into products of Gamma functions.</p>
+          <div class="formula-block">∭ x<sup>p-1</sup> y<sup>q-1</sup> z<sup>r-1</sup> dV = a<sup>p+q+r</sup> · Γ(p)Γ(q)Γ(r) / Γ(p+q+r+1)</div>
+          <p class="note">Used as a standard result to quickly evaluate such integrals in engineering mathematics.</p>
         </div>
-        <div class="question">
-          <p>3) Which factor appears in cylindrical coordinates?</p>
-          <label><input type="radio" name="post3" value="0" required /> 1/r</label>
-          <label><input type="radio" name="post3" value="1" /> r</label>
-          <label><input type="radio" name="post3" value="0" /> r² only in all cases</label>
+
+        <div class="theory-section">
+          <h3 class="theory-heading"><span class="theory-num">6</span>Application to Volume</h3>
+          <div class="formula-block">Volume(V) = ∭<sub>V</sub> 1 dV</div>
+          <div class="formula-block example"><span class="formula-label">Box</span>0≤x≤a, 0≤y≤b, 0≤z≤c → Volume = abc</div>
         </div>
-        <button type="submit">Submit Posttest</button>
-      </form>
-      <p id="posttestResult" class="result muted">Attempt all questions and submit.</p>
-    </section>
+      </section>
 
-    <section class="card tab-panel" id="referencesTab">
-      <h2>References</h2>
-      <ul>
-        <li>Advanced Engineering Mathematics - Erwin Kreyszig</li>
-        <li>Calculus: Early Transcendentals - James Stewart</li>
-        <li>MIT OCW Multivariable Calculus lectures</li>
-      </ul>
-    </section>
+      <!-- SIMULATION -->
+      <section class="tab-panel" id="solverTab">
+        <h2 class="section-title">Simulation</h2>
+        <p class="section-desc">Numerically compute integrals using midpoint Riemann sums with interactive 3D visualization.</p>
+        <div class="sim-layout">
+          <div class="sim-controls">
+            <div>
+              <p class="control-group-title">Configuration</p>
+              <div class="control-row" style="margin-bottom:10px;">
+                <div class="form-field">
+                  <label for="mode">Integral Type</label>
+                  <select id="mode">
+                    <option value="double">Double Integral</option>
+                    <option value="triple">Triple Integral</option>
+                  </select>
+                </div>
+                <div class="form-field">
+                  <label for="coordSystem">Coordinate System</label>
+                  <select id="coordSystem"></select>
+                </div>
+              </div>
+              <div class="form-field" id="doubleCaseWrap">
+                <label for="doubleCase">Region Setup</label>
+                <select id="doubleCase">
+                  <option value="case1">y-limits depend on x</option>
+                  <option value="case2">x-limits depend on y</option>
+                  <option value="case3">Rectangular (constant limits)</option>
+                  <option value="case4">Rectangular (separable f)</option>
+                </select>
+              </div>
+            </div>
 
-    <section class="card tab-panel" id="contributorsTab">
-      <h2>Contributors</h2>
-      <p><strong>Faculty:</strong> Prof. Rajesh Talekar</p>
-      <p><strong>Students:</strong> Om Khanjodkar (125B1B283), Siddhant Verma (125B1B278)</p>
-    </section>
+            <div>
+              <p class="control-group-title">Function</p>
+              <div class="form-field">
+                <label for="funcInput">f expression</label>
+                <input id="funcInput" type="text" value="x*y" />
+              </div>
+            </div>
 
-    <section class="card tab-panel" id="feedbackTab">
-      <h2>Feedback</h2>
-      <form id="feedbackForm">
-        <label for="name">Name (Optional)</label>
-        <input id="name" type="text" />
-        <label for="email">Email (Optional)</label>
-        <input id="email" type="email" />
-        <label for="comments">Comments</label>
-        <textarea id="comments" rows="4" required></textarea>
-        <button type="submit">Submit Feedback</button>
-      </form>
-      <p id="feedbackResult" class="result muted"></p>
-    </section>
+            <div>
+              <p class="control-group-title">Limits</p>
+              <div class="limits-grid">
+                <div class="form-field" id="xMinWrap"><label for="xMin">x min</label><input id="xMin" type="number" step="any" value="0" /></div>
+                <div class="form-field" id="xMaxWrap"><label for="xMax">x max</label><input id="xMax" type="number" step="any" value="1" /></div>
+                <div class="form-field" id="yMinWrap"><label for="yMin">y min</label><input id="yMin" type="number" step="any" value="0" /></div>
+                <div class="form-field" id="yMaxWrap"><label for="yMax">y max</label><input id="yMax" type="number" step="any" value="1" /></div>
+                <div class="form-field hidden" id="zMinWrap"><label for="zMin">z min</label><input id="zMin" type="number" step="any" value="0" /></div>
+                <div class="form-field hidden" id="zMaxWrap"><label for="zMax">z max</label><input id="zMax" type="number" step="any" value="1" /></div>
+                <div class="form-field hidden" id="innerLowerWrap" style="grid-column:1/-1"><label for="innerLower">Inner lower limit</label><input id="innerLower" type="text" value="0" /></div>
+                <div class="form-field hidden" id="innerUpperWrap" style="grid-column:1/-1"><label for="innerUpper">Inner upper limit</label><input id="innerUpper" type="text" value="x" /></div>
+              </div>
+            </div>
+
+            <div class="sim-actions">
+              <button id="solveBtn" class="btn btn-primary">Compute</button>
+              <button id="exampleBtn" type="button" class="btn btn-ghost btn-sm">Load Example</button>
+              <button id="resetBtn"   type="button" class="btn btn-ghost btn-sm">Reset</button>
+            </div>
+          </div>
+
+          <div class="sim-output">
+            <div class="result-card">
+              <h3>Result</h3>
+              <div class="result-value" id="integralResult">Ready</div>
+              <div class="result-meta" id="integralMeta">Configure the integral and click Compute.</div>
+              <div class="result-tip">Tip: Use <code>r</code>, <code>theta</code> for polar · <code>x</code>, <code>y</code>, <code>z</code> for Cartesian.</div>
+            </div>
+            <div class="viz-card">
+              <div class="viz-card-head">3D Visualization</div>
+              <div id="vizStatus">Graph will appear after computation.</div>
+              <div id="viz3d" aria-label="3D integration graph"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- POSTTEST -->
+      <section class="tab-panel" id="posttestTab">
+        <div class="quiz-header">
+          <h2 class="section-title">Posttest</h2>
+          <p class="section-desc">Evaluate your understanding after completing the experiment.</p>
+        </div>
+        <form id="posttestForm" class="quiz-form">
+          <div class="question-card">
+            <div class="question-num">Q1</div>
+            <p class="question-text">Evaluate ∬(x + y) dA over x:[0,1], y:[0,1].</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post1" value="0" required /><span>0.5</span></label>
+              <label class="option-card"><input type="radio" name="post1" value="1" /><span>1</span></label>
+              <label class="option-card"><input type="radio" name="post1" value="0" /><span>2</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q2</div>
+            <p class="question-text">In polar conversion, which substitution is correct?</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post2" value="1" required /><span>x = r cosθ, y = r sinθ</span></label>
+              <label class="option-card"><input type="radio" name="post2" value="0" /><span>x = r sinθ, y = r cosθ</span></label>
+              <label class="option-card"><input type="radio" name="post2" value="0" /><span>x = θ cosr, y = θ sinr</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q3</div>
+            <p class="question-text">If f(x,y,z)=1 over the unit cube [0,1]³, then ∭f dV equals:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post3" value="0" required /><span>0</span></label>
+              <label class="option-card"><input type="radio" name="post3" value="1" /><span>1</span></label>
+              <label class="option-card"><input type="radio" name="post3" value="0" /><span>3</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q4</div>
+            <p class="question-text">The area of a region R in the plane is computed by:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post4" value="1" required /><span>∬<sub>R</sub> 1 dA</span></label>
+              <label class="option-card"><input type="radio" name="post4" value="0" /><span>∭<sub>V</sub> 1 dV</span></label>
+              <label class="option-card"><input type="radio" name="post4" value="0" /><span>∫ 1 dx only</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q5</div>
+            <p class="question-text">The volume of a solid region V is computed by:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post5" value="1" required /><span>∭<sub>V</sub> 1 dV</span></label>
+              <label class="option-card"><input type="radio" name="post5" value="0" /><span>∬<sub>R</sub> 1 dA</span></label>
+              <label class="option-card"><input type="radio" name="post5" value="0" /><span>∫ 1 dz only</span></label>
+            </div>
+          </div>
+          <div class="quiz-actions"><button type="submit" class="btn btn-primary">Submit Posttest</button></div>
+        </form>
+        <div id="posttestResult" class="quiz-result hidden"></div>
+      </section>
+
+      <!-- REFERENCES -->
+      <section class="tab-panel" id="referencesTab">
+        <h2 class="section-title">References</h2>
+        <p class="section-desc">Key textbooks and resources used in this virtual lab.</p>
+        <div class="ref-list">
+          <div class="ref-item"><span class="ref-num">01</span><span class="ref-text">Advanced Engineering Mathematics — Erwin Kreyszig</span></div>
+          <div class="ref-item"><span class="ref-num">02</span><span class="ref-text">Calculus: Early Transcendentals — James Stewart</span></div>
+          <div class="ref-item"><span class="ref-num">03</span><span class="ref-text">MIT OpenCourseWare — Multivariable Calculus (18.02)</span></div>
+        </div>
+      </section>
+
+      <!-- CONTRIBUTORS -->
+      <section class="tab-panel" id="contributorsTab">
+        <h2 class="section-title">Contributors</h2>
+        <p class="section-desc">The team behind this virtual lab experiment.</p>
+        <div class="contrib-section">
+          <p class="contrib-label">Faculty</p>
+          <div class="contrib-cards">
+            <div class="contrib-card">
+              <div class="contrib-avatar">RT</div>
+              <div>
+                <div class="contrib-name">Prof. Rajesh Talekar</div>
+                <div class="contrib-role">Faculty Guide</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="contrib-section">
+          <p class="contrib-label">Students</p>
+          <div class="contrib-cards">
+            <div class="contrib-card">
+              <div class="contrib-avatar">OK</div>
+              <div>
+                <div class="contrib-name">Om Khanjodkar</div>
+                <div class="contrib-role">Student</div>
+                <div class="contrib-id">125B1B283</div>
+              </div>
+            </div>
+            <div class="contrib-card">
+              <div class="contrib-avatar">SV</div>
+              <div>
+                <div class="contrib-name">Siddhant Verma</div>
+                <div class="contrib-role">Student</div>
+                <div class="contrib-id">125B1B278</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEEDBACK -->
+      <section class="tab-panel" id="feedbackTab">
+        <h2 class="section-title">Feedback</h2>
+        <p class="section-desc">Share your experience with this virtual lab.</p>
+        <form id="feedbackForm" class="feedback-form">
+          <div class="form-row">
+            <div class="form-field"><label for="name">Name (Optional)</label><input id="name" type="text" placeholder="Your name" /></div>
+            <div class="form-field"><label for="email">Email (Optional)</label><input id="email" type="email" placeholder="your@email.com" /></div>
+          </div>
+          <div class="form-field"><label for="comments">Comments</label><textarea id="comments" rows="4" required placeholder="Your feedback..."></textarea></div>
+          <div><button type="submit" class="btn btn-primary">Submit Feedback</button></div>
+        </form>
+        <div id="feedbackResult"></div>
+      </section>
+
     </div>
   </main>
+</div>
 
-  <footer class="footer">
-    <p>Virtual Labs - Double and Triple Integration</p>
-  </footer>
-
-  <script src="script.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
