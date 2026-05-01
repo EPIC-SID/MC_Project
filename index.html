@@ -256,8 +256,17 @@
             <div class="result-card">
               <h3>Result</h3>
               <div class="result-value" id="integralResult">Ready</div>
+              <div id="integralSymbolic" style="display:none;margin-top:6px;">
+                <div class="result-symbolic"><span class="sym-label">≈</span><span id="integralSymVal"></span></div>
+              </div>
               <div class="result-meta" id="integralMeta">Configure the integral and click Compute.</div>
               <div class="result-tip">Tip: Use <code>r</code>, <code>theta</code> for polar · <code>x</code>, <code>y</code>, <code>z</code> for Cartesian.</div>
+            </div>
+            <div class="steps-card" id="stepsCard" style="display:none;">
+              <div class="steps-card-head" id="stepsToggle">
+                Calculation Steps <span class="toggle-icon">▼</span>
+              </div>
+              <div class="steps-body" id="stepsContent"></div>
             </div>
             <div class="viz-card">
               <div class="viz-card-head">3D Visualization</div>

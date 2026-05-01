@@ -1,3 +1,205 @@
+/* ── GCD helper ────────────────────────────────── */
+function gcd(a, b) {
+  a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b));
+  while (b) { let t = b; b = a % b; a = t; }
+  return a || 1;
+}
+
+/* ── Recognize symbolic constants ─────────────── */
+function recognizeConstant(val) {
+  if (!Number.isFinite(val)) return null;
+  const abs = Math.abs(val);
+  const sign = val < 0 ? '−' : '';
+  if (abs < 1e-9) return '0';
+  const tol = 1.5e-4;
+
+  // Pure fractions n/d
+  for (let d = 1; d <= 20; d++) {
+    for (let n = 1; n <= 20 * d; n++) {
+      const c = n / d;
+      if (Math.abs(abs - c) / c < tol) {
+        const g = gcd(n, d); const sn = n/g, sd = d/g;
+        return sign + (sd === 1 ? `${sn}` : `${sn}/${sd}`);
+      }
+    }
+  }
+
+  const bases = [
+    { sym: 'π',  v: Math.PI },
+    { sym: '√2', v: Math.SQRT2 },
+    { sym: '√3', v: Math.sqrt(3) },
+    { sym: 'π²', v: Math.PI * Math.PI },
+    { sym: '√5', v: Math.sqrt(5) },
+    { sym: 'e',  v: Math.E },
+    { sym: 'π√2',v: Math.PI * Math.SQRT2 },
+    { sym: 'π√3',v: Math.PI * Math.sqrt(3) },
+  ];
+
+  for (const base of bases) {
+    for (let d = 1; d <= 12; d++) {
+      for (let n = 1; n <= 8 * d; n++) {
+        const c = (n / d) * base.v;
+        if (Math.abs(abs - c) / c < tol) {
+          const g = gcd(n, d); const sn = n/g, sd = d/g;
+          let sym;
+          if (sd === 1 && sn === 1) sym = base.sym;
+          else if (sd === 1) sym = `${sn}${base.sym}`;
+          else if (sn === 1) sym = `${base.sym}/${sd}`;
+          else sym = `${sn}${base.sym}/${sd}`;
+          return sign + sym;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/* ── Display result with symbolic form ─────────── */
+function displayResult(val, metaText) {
+  const resultEl = document.getElementById('integralResult');
+  const metaEl   = document.getElementById('integralMeta');
+  const symWrap  = document.getElementById('integralSymbolic');
+  const symVal   = document.getElementById('integralSymVal');
+
+  resultEl.textContent = `≈ ${val.toFixed(8)}`;
+  metaEl.textContent   = metaText;
+
+  const sym = recognizeConstant(val);
+  if (sym) {
+    symVal.textContent = sym;
+    symWrap.style.display = 'block';
+  } else {
+    symWrap.style.display = 'none';
+  }
+}
+
+/* ── Build steps HTML for double integral ──────── */
+function buildStepsDouble(expr, coordSystem, a, b, c, d, N, val, caseNote) {
+  const dx = (b - a) / N, dy = (d - c) / N;
+  const sym = recognizeConstant(val);
+  const ax  = coordSystem === 'polar' ? 'r' : 'x';
+  const ay  = coordSystem === 'polar' ? 'θ' : 'y';
+  const jac = coordSystem === 'polar' ? '<em>Jacobian r multiplied automatically.</em>' : '';
+
+  // Sample evaluations (4 cells)
+  let sampleRows = '';
+  const fnVars = coordSystem === 'polar'
+    ? ['r','theta','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E']
+    : ['x','y','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E'];
+  let fn;
+  try { fn = safeCompile(expr, fnVars); } catch { fn = null; }
+
+  for (let i = 0; i < 2; i++) {
+    for (let j = 0; j < 2; j++) {
+      const xi = a + (i + 0.5) * dx;
+      const yi = c + (j + 0.5) * dy;
+      let fv = '—';
+      if (fn) {
+        try {
+          const raw = fn(xi, yi, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
+          fv = Number.isFinite(raw) ? raw.toFixed(6) : '—';
+        } catch {}
+      }
+      sampleRows += `<tr><td>${xi.toFixed(4)}</td><td>${yi.toFixed(4)}</td><td>${fv}</td></tr>`;
+    }
+  }
+
+  return `
+  <div class="step-block">
+    <div class="step-block-title">Step 1 — Integral Setup</div>
+    <div class="step-content">
+      ∬ (${expr}) d${ax}d${ay}<br>
+      ${ax} ∈ [${a}, ${b}],  ${ay} ∈ [${c}, ${d}]<br>
+      ${jac}${caseNote ? `<em>${caseNote}</em>` : ''}
+    </div>
+  </div>
+  <div class="step-block">
+    <div class="step-block-title">Step 2 — Partition  (N = ${N} per axis)</div>
+    <div class="step-content">
+      Δ${ax} = (${b} − ${a}) / ${N} = <strong>${dx.toFixed(6)}</strong><br>
+      Δ${ay} = (${d} − ${c}) / ${N} = <strong>${dy.toFixed(6)}</strong><br>
+      Total cells = ${N} × ${N} = ${N * N}
+    </div>
+  </div>
+  <div class="step-block">
+    <div class="step-block-title">Step 3 — Midpoint Rule</div>
+    <div class="step-content">
+      ${ax}ᵢ* = ${a} + (i + 0.5) · Δ${ax}<br>
+      ${ay}ⱼ* = ${c} + (j + 0.5) · Δ${ay}<br>
+      Result ≈ Σᵢ Σⱼ f(${ax}ᵢ*, ${ay}ⱼ*) · Δ${ax} · Δ${ay}
+    </div>
+  </div>
+  <div class="step-block">
+    <div class="step-block-title">Step 4 — Sample Evaluations (4 of ${N*N})</div>
+    <div class="step-content">
+      <table class="steps-table">
+        <thead><tr><th>${ax}*</th><th>${ay}*</th><th>f(${ax}*,${ay}*)</th></tr></thead>
+        <tbody>${sampleRows}</tbody>
+      </table>
+    </div>
+  </div>
+  <div class="step-block">
+    <div class="step-block-title">Step 5 — Final Result</div>
+    <div class="step-content">
+      <div class="step-final-val">≈ ${val.toFixed(8)}</div>
+      ${sym ? `<div class="step-symbolic-val">= ${sym}</div>` : '<em>No common symbolic form recognised.</em>'}
+    </div>
+  </div>`;
+}
+
+/* ── Build steps HTML for triple integral ──────── */
+function buildStepsTriple(expr, coordSystem, a, b, c, d, e, f, N, val) {
+  const dx = (b-a)/N, dy = (d-c)/N, dz = (f-e)/N;
+  const sym = recognizeConstant(val);
+  const axes = { cartesian3d:['x','y','z'], cylindrical:['r','θ','z'], spherical:['ρ','φ','θ'] };
+  const [a1,a2,a3] = axes[coordSystem] || ['x','y','z'];
+  const jac = coordSystem==='cylindrical' ? '<em>Jacobian r applied automatically.</em>'
+            : coordSystem==='spherical'   ? '<em>Jacobian ρ²sin(φ) applied automatically.</em>'
+            : '';
+  return `
+  <div class="step-block">
+    <div class="step-block-title">Step 1 — Integral Setup</div>
+    <div class="step-content">
+      ∭ (${expr}) d${a1}d${a2}d${a3}<br>
+      ${a1}∈[${a},${b}],  ${a2}∈[${c},${d}],  ${a3}∈[${e},${f}]<br>
+      ${jac}
+    </div>
+  </div>
+  <div class="step-block">
+    <div class="step-block-title">Step 2 — Partition  (N = ${N} per axis)</div>
+    <div class="step-content">
+      Δ${a1} = ${dx.toFixed(6)},   Δ${a2} = ${dy.toFixed(6)},   Δ${a3} = ${dz.toFixed(6)}<br>
+      Total cells = ${N}³ = ${N*N*N}
+    </div>
+  </div>
+  <div class="step-block">
+    <div class="step-block-title">Step 3 — Midpoint Rule</div>
+    <div class="step-content">
+      ${a1}ᵢ* = ${a} + (i+0.5)·Δ${a1}<br>
+      ${a2}ⱼ* = ${c} + (j+0.5)·Δ${a2}<br>
+      ${a3}ₖ* = ${e} + (k+0.5)·Δ${a3}<br>
+      Result ≈ Σ f(${a1}ᵢ*,${a2}ⱼ*,${a3}ₖ*) · Δ${a1}·Δ${a2}·Δ${a3}
+    </div>
+  </div>
+  <div class="step-block">
+    <div class="step-block-title">Step 4 — Final Result</div>
+    <div class="step-content">
+      <div class="step-final-val">≈ ${val.toFixed(8)}</div>
+      ${sym ? `<div class="step-symbolic-val">= ${sym}</div>` : '<em>No common symbolic form recognised.</em>'}
+    </div>
+  </div>`;
+}
+
+/* ── Show / toggle steps card ──────────────────── */
+function showSteps(html) {
+  const card    = document.getElementById('stepsCard');
+  const content = document.getElementById('stepsContent');
+  card.style.display = 'block';
+  content.innerHTML  = html;
+  content.classList.remove('hidden');
+  document.getElementById('stepsToggle').classList.remove('collapsed');
+}
+
 function normalizeExpression(input) {
   let expr = String(input || "").trim();
   if (expr.length === 0) {
@@ -550,8 +752,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
         const wrapped = (r, theta) =>
           fn(r, theta, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E) * r;
         const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
-        resultEl.textContent = `Approximate Value: ${val.toFixed(8)}`;
-        metaEl.textContent = `Polar integration with Jacobian r using ${steps}x${steps} cells.`;
+        displayResult(val, `Polar · Jacobian r · ${steps}×${steps} cells`);
+        showSteps(buildStepsDouble(expr, 'polar', a, b, c, d, steps, val, ''));
         vizContext = { mode: "double", coordSystem, expr, a, b, c, d };
       } else {
         const fn = safeCompile(expr, ["x", "y", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
@@ -575,8 +777,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             steps,
             "case1"
           );
-          resultEl.textContent = `Approximate Value: ${val.toFixed(8)}`;
-          metaEl.textContent = `Case 1 applied: outer x limits constant, inner y limits are functions of x.`;
+          displayResult(val, `Case 1: outer x∈[${a},${b}], inner y = [g₁(x), g₂(x)]`);
+          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, 0, 1, steps, val, `y-limits: [${lowExpr}, ${upExpr}]`));
           const range = estimateInnerRange(
             a,
             b,
@@ -614,8 +816,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             steps,
             "case2"
           );
-          resultEl.textContent = `Approximate Value: ${val.toFixed(8)}`;
-          metaEl.textContent = `Case 2 applied: outer y limits constant, inner x limits are functions of y.`;
+          displayResult(val, `Case 2: outer y∈[${c},${d}], inner x = [h₁(y), h₂(y)]`);
+          showSteps(buildStepsDouble(expr, 'cartesian2d', 0, 1, c, d, steps, val, `x-limits: [${lowExpr}, ${upExpr}]`));
           const range = estimateInnerRange(
             c,
             d,
@@ -641,8 +843,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             throw new Error("Ensure x max > x min and y max > y min.");
           }
           const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
-          resultEl.textContent = `Approximate Value: ${val.toFixed(8)}`;
-          metaEl.textContent = `Case 4 selected: constant limits with separable integrand f(x,y)=X(x)Y(y) (numerical evaluation shown).`;
+          displayResult(val, `Case 4 (separable): x∈[${a},${b}], y∈[${c},${d}]`);
+          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'Separable f(x,y) = X(x)·Y(y)'));
           vizContext = { mode: "double", coordSystem, expr, a, b, c, d, doubleCase };
         } else {
           const c = parseNumber("yMin");
@@ -651,8 +853,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             throw new Error("Ensure x max > x min and y max > y min.");
           }
           const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
-          resultEl.textContent = `Approximate Value: ${val.toFixed(8)}`;
-          metaEl.textContent = `Case 3 applied: both limits constant, iterated integration.`;
+          displayResult(val, `Case 3 (rectangular): x∈[${a},${b}], y∈[${c},${d}]`);
+          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'Both limits constant'));
           vizContext = { mode: "double", coordSystem, expr, a, b, c, d, doubleCase };
         }
       }
@@ -673,8 +875,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
         const wrapped = (r, theta, z) =>
           fn(r, theta, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E) * r;
         const val = midpointTripleIntegral(wrapped, a, b, c, d, e, f, steps);
-        resultEl.textContent = `Approximate Value: ${val.toFixed(8)}`;
-        metaEl.textContent = `Cylindrical integration with Jacobian r using ${steps}^3 cells.`;
+        displayResult(val, `Cylindrical · Jacobian r · ${steps}³ cells`);
+        showSteps(buildStepsTriple(expr, 'cylindrical', a, b, c, d, e, f, steps, val));
         vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
       } else if (coordSystem === "spherical") {
         const fn = safeCompile(expr, ["rho", "phi", "theta", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
@@ -684,16 +886,16 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           rho *
           Math.sin(phi);
         const val = midpointTripleIntegral(wrapped, a, b, c, d, e, f, steps);
-        resultEl.textContent = `Approximate Value: ${val.toFixed(8)}`;
-        metaEl.textContent = `Spherical integration with Jacobian rho^2 sin(phi) using ${steps}^3 cells.`;
+        displayResult(val, `Spherical · Jacobian ρ²sin(φ) · ${steps}³ cells`);
+        showSteps(buildStepsTriple(expr, 'spherical', a, b, c, d, e, f, steps, val));
         vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
       } else {
         const fn = safeCompile(expr, ["x", "y", "z", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
         const wrapped = (x, y, z) =>
           fn(x, y, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
         const val = midpointTripleIntegral(wrapped, a, b, c, d, e, f, steps);
-        resultEl.textContent = `Approximate Value: ${val.toFixed(8)}`;
-        metaEl.textContent = `Cartesian triple integral using ${steps}^3 midpoint cells.`;
+        displayResult(val, `Cartesian · ${steps}³ midpoint cells`);
+        showSteps(buildStepsTriple(expr, 'cartesian3d', a, b, c, d, e, f, steps, val));
         vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
       }
     }
@@ -705,9 +907,11 @@ document.getElementById("solveBtn").addEventListener("click", () => {
       }
     }
   } catch (error) {
-    resultEl.innerHTML = '⚠️ Computation failed';
-    metaEl.textContent = error.message;
-    clearVisualization("Graph could not be generated due to invalid input.");
+    document.getElementById('integralResult').innerHTML = '⚠️ Computation failed';
+    document.getElementById('integralMeta').textContent = error.message;
+    document.getElementById('integralSymbolic').style.display = 'none';
+    document.getElementById('stepsCard').style.display = 'none';
+    clearVisualization('Graph could not be generated due to invalid input.');
   }
 });
 
@@ -802,3 +1006,11 @@ document.getElementById("feedbackForm").addEventListener("submit", (event) => {
 updateModeUI();
 switchTab("aimTab");
 clearVisualization("Graph will appear after computation.");
+
+document.getElementById('stepsToggle').addEventListener('click', () => {
+  const head    = document.getElementById('stepsToggle');
+  const content = document.getElementById('stepsContent');
+  const collapsed = head.classList.toggle('collapsed');
+  content.classList.toggle('hidden', collapsed);
+});
+
