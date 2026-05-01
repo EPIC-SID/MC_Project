@@ -854,58 +854,61 @@ function updateModeUI() {
         innerUpperWrap.classList.add("hidden");
       }
     }
-  } else {
-    if (lastMode !== "triple") {
-      coordSystem.innerHTML =
-        "<option value='cartesian3d'>Cartesian (x,y,z)</option><option value='cylindrical'>Cylindrical (r,theta,z)</option><option value='spherical'>Spherical (rho,phi,theta)</option>";
-      if (currentCoord === "cylindrical" || currentCoord === "spherical") {
-        coordSystem.value = currentCoord;
+    }
+    /*
+    else {
+      if (lastMode !== "triple") {
+        coordSystem.innerHTML =
+          "<option value='cartesian3d'>Cartesian (x,y,z)</option><option value='cylindrical'>Cylindrical (r,theta,z)</option><option value='spherical'>Spherical (rho,phi,theta)</option>";
+        if (currentCoord === "cylindrical" || currentCoord === "spherical") {
+          coordSystem.value = currentCoord;
+        } else {
+          coordSystem.value = "cartesian3d";
+        }
+      }
+      coordSystem.dataset.mode = "triple";
+      doubleCaseWrap.classList.add("hidden");
+      innerLowerWrap.classList.add("hidden");
+      innerUpperWrap.classList.add("hidden");
+      zMinWrap.classList.remove("hidden");
+      zMaxWrap.classList.remove("hidden");
+      xMinWrap.classList.remove("hidden");
+      xMaxWrap.classList.remove("hidden");
+      yMinWrap.classList.remove("hidden");
+      yMaxWrap.classList.remove("hidden");
+      if (coordSystem.value === "cylindrical") {
+        xMinLabel.textContent = "r min";
+        xMaxLabel.textContent = "r max";
+        yMinLabel.textContent = "theta min";
+        yMaxLabel.textContent = "theta max";
+        zMinLabel.textContent = "z min";
+        zMaxLabel.textContent = "z max";
+        if (funcInput.value.trim() === "" || funcInput.value.includes("x")) {
+          funcInput.value = "r*z";
+        }
+      } else if (coordSystem.value === "spherical") {
+        xMinLabel.textContent = "rho min";
+        xMaxLabel.textContent = "rho max";
+        yMinLabel.textContent = "phi min";
+        yMaxLabel.textContent = "phi max";
+        zMinLabel.textContent = "theta min";
+        zMaxLabel.textContent = "theta max";
+        if (funcInput.value.trim() === "" || funcInput.value.includes("x")) {
+          funcInput.value = "rho*rho*sin(phi)";
+        }
       } else {
-        coordSystem.value = "cartesian3d";
+        xMinLabel.textContent = "x min";
+        xMaxLabel.textContent = "x max";
+        yMinLabel.textContent = "y min";
+        yMaxLabel.textContent = "y max";
+        zMinLabel.textContent = "z min";
+        zMaxLabel.textContent = "z max";
+        if (funcInput.value.trim() === "" || !funcInput.value.includes("z")) {
+          funcInput.value = "x*y + z";
+        }
       }
     }
-    coordSystem.dataset.mode = "triple";
-    doubleCaseWrap.classList.add("hidden");
-    innerLowerWrap.classList.add("hidden");
-    innerUpperWrap.classList.add("hidden");
-    zMinWrap.classList.remove("hidden");
-    zMaxWrap.classList.remove("hidden");
-    xMinWrap.classList.remove("hidden");
-    xMaxWrap.classList.remove("hidden");
-    yMinWrap.classList.remove("hidden");
-    yMaxWrap.classList.remove("hidden");
-    if (coordSystem.value === "cylindrical") {
-      xMinLabel.textContent = "r min";
-      xMaxLabel.textContent = "r max";
-      yMinLabel.textContent = "theta min";
-      yMaxLabel.textContent = "theta max";
-      zMinLabel.textContent = "z min";
-      zMaxLabel.textContent = "z max";
-      if (funcInput.value.trim() === "" || funcInput.value.includes("x")) {
-        funcInput.value = "r*z";
-      }
-    } else if (coordSystem.value === "spherical") {
-      xMinLabel.textContent = "rho min";
-      xMaxLabel.textContent = "rho max";
-      yMinLabel.textContent = "phi min";
-      yMaxLabel.textContent = "phi max";
-      zMinLabel.textContent = "theta min";
-      zMaxLabel.textContent = "theta max";
-      if (funcInput.value.trim() === "" || funcInput.value.includes("x")) {
-        funcInput.value = "rho*rho*sin(phi)";
-      }
-    } else {
-      xMinLabel.textContent = "x min";
-      xMaxLabel.textContent = "x max";
-      yMinLabel.textContent = "y min";
-      yMaxLabel.textContent = "y max";
-      zMinLabel.textContent = "z min";
-      zMaxLabel.textContent = "z max";
-      if (funcInput.value.trim() === "" || !funcInput.value.includes("z")) {
-        funcInput.value = "x*y + z";
-      }
-    }
-  }
+    */
 }
 
 function switchTab(tabId) {
@@ -1071,7 +1074,9 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           vizContext = { mode: "double", coordSystem, expr, a, b, c, d, doubleCase };
         }
       }
-    } else {
+    }
+    /*
+    else {
       const c = parseNumber("yMin");
       const d = parseNumber("yMax");
       if (!(b > a && d > c)) {
@@ -1118,6 +1123,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
         vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
       }
     }
+    */
     if (vizContext) {
       if (vizContext.mode === "double") {
         renderDoubleVisualization(vizContext);
@@ -1159,31 +1165,34 @@ document.getElementById("exampleBtn").addEventListener("click", () => {
         document.getElementById("innerUpper").value = "1-y";
       }
     }
-  } else if (coordSystem === "cylindrical") {
-    document.getElementById("funcInput").value = "r*z";
-    document.getElementById("xMin").value = "0";
-    document.getElementById("xMax").value = "1";
-    document.getElementById("yMin").value = "0";
-    document.getElementById("yMax").value = "6.283185307179586";
-    document.getElementById("zMin").value = "0";
-    document.getElementById("zMax").value = "2";
-  } else if (coordSystem === "spherical") {
-    document.getElementById("funcInput").value = "1";
-    document.getElementById("xMin").value = "0";
-    document.getElementById("xMax").value = "1";
-    document.getElementById("yMin").value = "0";
-    document.getElementById("yMax").value = "3.141592653589793";
-    document.getElementById("zMin").value = "0";
-    document.getElementById("zMax").value = "6.283185307179586";
-  } else {
-    document.getElementById("funcInput").value = "x*y + z";
-    document.getElementById("xMin").value = "0";
-    document.getElementById("xMax").value = "1";
-    document.getElementById("yMin").value = "0";
-    document.getElementById("yMax").value = "1";
-    document.getElementById("zMin").value = "0";
-    document.getElementById("zMax").value = "1";
-  }
+    }
+    /*
+    else if (coordSystem === "cylindrical") {
+      document.getElementById("funcInput").value = "r*z";
+      document.getElementById("xMin").value = "0";
+      document.getElementById("xMax").value = "1";
+      document.getElementById("yMin").value = "0";
+      document.getElementById("yMax").value = "6.283185307179586";
+      document.getElementById("zMin").value = "0";
+      document.getElementById("zMax").value = "2";
+    } else if (coordSystem === "spherical") {
+      document.getElementById("funcInput").value = "1";
+      document.getElementById("xMin").value = "0";
+      document.getElementById("xMax").value = "1";
+      document.getElementById("yMin").value = "0";
+      document.getElementById("yMax").value = "3.141592653589793";
+      document.getElementById("zMin").value = "0";
+      document.getElementById("zMax").value = "6.283185307179586";
+    } else {
+      document.getElementById("funcInput").value = "x*y + z";
+      document.getElementById("xMin").value = "0";
+      document.getElementById("xMax").value = "1";
+      document.getElementById("yMin").value = "0";
+      document.getElementById("yMax").value = "1";
+      document.getElementById("zMin").value = "0";
+      document.getElementById("zMax").value = "1";
+    }
+    */
 });
 
 document.getElementById("resetBtn").addEventListener("click", () => {
