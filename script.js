@@ -9,17 +9,21 @@ function gcd(a, b) {
 function recognizeConstant(val) {
   if (!Number.isFinite(val)) return null;
   const abs = Math.abs(val);
-  const sign = val < 0 ? '−' : '';
-  if (abs < 1e-9) return '0';
-  const tol = 1.5e-4;
+  const sign = val < 0 ? -1 : 1;
+  const signSym = val < 0 ? '−' : '';
+  if (abs < 1e-9) return { sym: '0', val: 0 };
+  const tol = 1.2e-3;
 
   // Pure fractions n/d
-  for (let d = 1; d <= 20; d++) {
-    for (let n = 1; n <= 20 * d; n++) {
+  for (let d = 1; d <= 24; d++) {
+    for (let n = 1; n <= 24 * d; n++) {
       const c = n / d;
-      if (Math.abs(abs - c) / c < tol) {
+      if (Math.abs(abs - c) / (c || 1) < tol) {
         const g = gcd(n, d); const sn = n/g, sd = d/g;
-        return sign + (sd === 1 ? `${sn}` : `${sn}/${sd}`);
+        return { 
+          sym: signSym + (sd === 1 ? `${sn}` : `${sn}/${sd}`), 
+          val: sign * (sn / sd) 
+        };
       }
     }
   }
@@ -36,17 +40,17 @@ function recognizeConstant(val) {
   ];
 
   for (const base of bases) {
-    for (let d = 1; d <= 12; d++) {
-      for (let n = 1; n <= 8 * d; n++) {
+    for (let d = 1; d <= 16; d++) {
+      for (let n = 1; n <= 10 * d; n++) {
         const c = (n / d) * base.v;
-        if (Math.abs(abs - c) / c < tol) {
+        if (Math.abs(abs - c) / (c || 1) < tol) {
           const g = gcd(n, d); const sn = n/g, sd = d/g;
-          let sym;
-          if (sd === 1 && sn === 1) sym = base.sym;
-          else if (sd === 1) sym = `${sn}${base.sym}`;
-          else if (sn === 1) sym = `${base.sym}/${sd}`;
-          else sym = `${sn}${base.sym}/${sd}`;
-          return sign + sym;
+          let s;
+          if (sd === 1 && sn === 1) s = base.sym;
+          else if (sd === 1) s = `${sn}${base.sym}`;
+          else if (sn === 1) s = `${base.sym}/${sd}`;
+          else s = `${sn}${base.sym}/${sd}`;
+          return { sym: signSym + s, val: sign * c };
         }
       }
     }
@@ -55,18 +59,28 @@ function recognizeConstant(val) {
 }
 
 /* ── Display result with symbolic form ─────────── */
-function displayResult(val, metaText) {
+function displayResult(val, metaText, isExact = false) {
   const resultEl = document.getElementById('integralResult');
   const metaEl   = document.getElementById('integralMeta');
   const symWrap  = document.getElementById('integralSymbolic');
   const symVal   = document.getElementById('integralSymVal');
 
-  resultEl.textContent = `≈ ${val.toFixed(8)}`;
+  const recognized = recognizeConstant(val);
+  
+  if (!isExact && recognized) {
+    val = recognized.val;
+    isExact = true;
+  }
+
+  if (isExact) {
+    resultEl.innerHTML = `<span style="color: #2563eb">= ${Number(val.toFixed(10))}</span>`;
+  } else {
+    resultEl.textContent = `≈ ${val.toFixed(8)}`;
+  }
   metaEl.textContent   = metaText;
 
-  const sym = recognizeConstant(val);
-  if (sym) {
-    symVal.textContent = sym;
+  if (recognized) {
+    symVal.textContent = recognized.sym;
     symWrap.style.display = 'block';
   } else {
     symWrap.style.display = 'none';
@@ -77,23 +91,28 @@ function displayResult(val, metaText) {
 function _ev(fn, x, y) {
   try { const v = fn(x, y, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E); return Number.isFinite(v) ? v : null; } catch { return null; }
 }
-function _evL(fn, t) {
-  try { const v = fn(t, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E); return Number.isFinite(v) ? v : null; } catch { return null; }
-}
-function _inner1D(fn, x, lo, hi, n, isCase1) {
-  // Compute 1D midpoint sum of inner integral for a fixed outer value
-  if (!(hi > lo)) return null;
-  const d = (hi - lo) / n; let s = 0;
-  for (let j = 0; j < n; j++) {
-    const inn = lo + (j + 0.5) * d;
-    const v = isCase1 ? _ev(fn, x, inn) : _ev(fn, inn, x);
-    if (v !== null) s += v;
+function _resultBlock(val, exactTeX) {
+  const recognized = recognizeConstant(val);
+  
+  if (exactTeX) {
+    return `<div class="step-block"><div class="step-block-title">Final Result</div><div class="step-content">
+      <div style="margin-bottom: 8px;">
+        <span class="sym-label" style="font-weight: 600; color: var(--primary);">Exact Analytical Result:</span><br>
+        <span class="sym-line" style="font-size: 16px;">\\( \\displaystyle ${exactTeX} \\)</span>
+      </div>
+      <div class="step-final-val" style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">
+        Numerical approximation: ≈ ${val.toFixed(8)}
+      </div>
+    </div></div>`;
   }
-  return s * d;
-}
-function _resultBlock(val) {
-  const sym = recognizeConstant(val);
-  return `<div class="step-block"><div class="step-block-title">Final Result</div><div class="step-content"><div class="step-final-val">≈ ${val.toFixed(8)}</div>${sym ? `<div class="step-symbolic-val">= ${sym}</div>` : '<em>No common symbolic form recognised.</em>'}</div></div>`;
+
+  const displayVal = recognized ? recognized.val : val;
+  const isExact = !!recognized;
+
+  return `<div class="step-block"><div class="step-block-title">Final Result</div><div class="step-content">
+    <div class="step-final-val">${isExact ? '=' : '≈'} ${displayVal.toFixed(isExact ? 4 : 8)}</div>
+    ${recognized ? `<div class="step-symbolic-val">= ${recognized.sym}</div>` : '<em>No common symbolic form recognised.</em>'}
+  </div></div>`;
 }
 
 /* ── DUIS helpers ───────────────────────────────── */
@@ -159,6 +178,7 @@ function buildDUISSteps(expr, innerVar, innerLo, innerHi, outerVar, outerLo, out
 
     // ── Outer antiderivative ──────────────────────
     let outerHTML = '';
+    let exactTeX = null;
     try {
       const antO_str = nerdamer.integrate(toNerd(Ix_str), outerVar).toString();
       const atOutHi_str = nSub(antO_str, outerVar, outerHi);
@@ -178,6 +198,7 @@ function buildDUISSteps(expr, innerVar, innerLo, innerHi, outerVar, outerLo, out
       catch { 
         finalR_tex = `${atOutHi_tex} - \\left(${atOutLo_tex}\\right)`; 
       }
+      exactTeX = finalR_tex;
 
       outerHTML = `
 <div class="step-block">
@@ -199,7 +220,13 @@ function buildDUISSteps(expr, innerVar, innerLo, innerHi, outerVar, outerLo, out
 </div>`;
     } catch { outerHTML = `<div class="step-block"><div class="step-block-title">Step 3 — Outer Integration wrt ${outerVar}</div><div class="step-content"><em>Outer integral evaluated numerically.</em></div></div>`; }
 
-    return innerHTML + outerHTML;
+    let exactVal = null;
+    try {
+      const res = nerdamer(`(${toNerd(atOutHi_str)})-(${toNerd(atOutLo_str)})`).evaluate();
+      exactVal = Number(res.text());
+    } catch(e) {}
+
+    return { html: innerHTML + outerHTML, exactTeX: exactTeX, exactVal: exactVal };
   } catch { return null; }
 }
 
@@ -213,31 +240,45 @@ function buildStepsDouble(expr, coordSystem, a, b, c, d, N, val, caseType, lowEx
   if (coordSystem === 'polar') {
     let pfn; try { pfn = safeCompile(expr,['r','theta','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E']); } catch { pfn=null; }
     let rows=''; for(let i=0;i<2;i++) for(let j=0;j<2;j++){const r=a+(i+.5)*dx,th=c+(j+.5)*dy;const fv=pfn?_ev(pfn,r,th):null;rows+=`<tr><td>${r.toFixed(4)}</td><td>${th.toFixed(4)}</td><td>${fv!==null?fv.toFixed(5):'—'}</td><td>${fv!==null?(fv*r).toFixed(5):'—'}</td></tr>`;}
-    return `<div class="step-block"><div class="step-block-title">Step 1 — Integral Setup</div><div class="step-content">∬ f(r,θ) dA = ∫<sub>${c}</sub><sup>${d}</sup> ∫<sub>${a}</sub><sup>${b}</sup> f(r,θ)·r dr dθ<br>r ∈ [${a},${b}], θ ∈ [${c},${d}]<br><em>Jacobian r included for polar.</em></div></div>
+    return {
+      html: `<div class="step-block"><div class="step-block-title">Step 1 — Integral Setup</div><div class="step-content">∬ f(r,θ) dA = ∫<sub>${c}</sub><sup>${d}</sup> ∫<sub>${a}</sub><sup>${b}</sup> f(r,θ)·r dr dθ<br>r ∈ [${a},${b}], θ ∈ [${c},${d}]<br><em>Jacobian r included for polar.</em></div></div>
 <div class="step-block"><div class="step-block-title">Step 2 — Partition (N=${N})</div><div class="step-content">Δr=${dx.toFixed(5)}, Δθ=${dy.toFixed(5)}, cells=${N*N}</div></div>
-<div class="step-block"><div class="step-block-title">Step 3 — Midpoint Sum</div><div class="step-content">Result ≈ Σ f(rᵢ*,θⱼ*)·rᵢ*·Δr·Δθ<table class="steps-table" style="margin-top:6px"><thead><tr><th>r*</th><th>θ*</th><th>f</th><th>f·r*</th></tr></thead><tbody>${rows}</tbody></table></div></div>${_resultBlock(val)}`;
+<div class="step-block"><div class="step-block-title">Step 3 — Midpoint Sum</div><div class="step-content">Result ≈ Σ f(rᵢ*,θⱼ*)·rᵢ*·Δr·Δθ<table class="steps-table" style="margin-top:6px"><thead><tr><th>r*</th><th>θ*</th><th>f</th><th>f·r*</th></tr></thead><tbody>${rows}</tbody></table></div></div>${_resultBlock(val)}`
+    };
   }
 
   // CASE 1: ∫[a→b] [ ∫[g1(x)→g2(x)] f dy ] dx
   if (caseType === 'case1') {
-    const duisHTML = buildDUISSteps(expr, 'y', lowExpr||'0', upExpr||'x', 'x', a, b);
-    return `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 1)</div><div class="step-content">
+    const duisResult = buildDUISSteps(expr, 'y', lowExpr||'0', upExpr||'x', 'x', a, b);
+    const duisHTML = duisResult ? duisResult.html : null;
+    const exactTeX = duisResult ? duisResult.exactTeX : null;
+    const exactVal = duisResult ? duisResult.exactVal : null;
+    return {
+      html: `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 1)</div><div class="step-content">
 ∬ f(x,y) dA = ∫<sub>${a}</sub><sup>${b}</sup> [ ∫<sub>${lowExpr}</sub><sup>${upExpr}</sup> f(x,y) <strong>dy</strong> ] <strong>dx</strong><br>
 Outer: x ∈ [${a}, ${b}] (constant) &nbsp;|&nbsp; Inner: y from ${lowExpr} to ${upExpr}
 </div></div>
 ${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
-${_resultBlock(val)}`;
+${_resultBlock(val, exactTeX)}`,
+      exactVal: exactVal
+    };
   }
 
   // CASE 2: ∫[c→d] [ ∫[h1(y)→h2(y)] f dx ] dy
   if (caseType === 'case2') {
-    const duisHTML = buildDUISSteps(expr, 'x', lowExpr||'0', upExpr||'y', 'y', c, d);
-    return `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 2)</div><div class="step-content">
+    const duisResult = buildDUISSteps(expr, 'x', lowExpr||'0', upExpr||'y', 'y', c, d);
+    const duisHTML = duisResult ? duisResult.html : null;
+    const exactTeX = duisResult ? duisResult.exactTeX : null;
+    const exactVal = duisResult ? duisResult.exactVal : null;
+    return {
+      html: `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 2)</div><div class="step-content">
 ∬ f(x,y) dA = ∫<sub>${c}</sub><sup>${d}</sup> [ ∫<sub>${lowExpr}</sub><sup>${upExpr}</sup> f(x,y) <strong>dx</strong> ] <strong>dy</strong><br>
 Outer: y ∈ [${c}, ${d}] (constant) &nbsp;|&nbsp; Inner: x from ${lowExpr} to ${upExpr}
 </div></div>
 ${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
-${_resultBlock(val)}`;
+${_resultBlock(val, exactTeX)}`,
+      exactVal: exactVal
+    };
   }
 
   // CASE 4: rectangular + separable
@@ -271,26 +312,38 @@ ${_resultBlock(val)}`;
     }
     
     // As a fallback and standard implementation, we can just use the DUIS logic to calculate
-    const duisHTML = buildDUISSteps(expr, 'y', c, d, 'x', a, b);
+    const duisResult = buildDUISSteps(expr, 'y', c, d, 'x', a, b);
+    const duisHTML = duisResult ? duisResult.html : null;
+    const exactTeX = duisResult ? duisResult.exactTeX : null;
+    const exactVal = duisResult ? duisResult.exactVal : null;
 
-    return `<div class="step-block"><div class="step-block-title">Step 1 — Separable Form (Case 4)</div><div class="step-content">
+    return {
+      html: `<div class="step-block"><div class="step-block-title">Step 1 — Separable Form (Case 4)</div><div class="step-content">
 f(x,y) = X(x)·Y(y) → ∬ f dA = [ ∫<sub>${a}</sub><sup>${b}</sup> X(x) dx ] × [ ∫<sub>${c}</sub><sup>${d}</sup> Y(y) dy ]<br>
 Both limits are constant → integral separates into two independent 1D integrals.
 </div></div>
 ${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
-${_resultBlock(val)}`;
+${_resultBlock(val, exactTeX)}`,
+      exactVal: exactVal
+    };
   }
 
   // CASE 3: rectangular, non-separable
   if (caseType === 'case3' || caseType === undefined) {
-    const duisHTML = buildDUISSteps(expr, 'y', c, d, 'x', a, b);
-    return `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 3)</div><div class="step-content">
+    const duisResult = buildDUISSteps(expr, 'y', c, d, 'x', a, b);
+    const duisHTML = duisResult ? duisResult.html : null;
+    const exactTeX = duisResult ? duisResult.exactTeX : null;
+    const exactVal = duisResult ? duisResult.exactVal : null;
+    return {
+      html: `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 3)</div><div class="step-content">
 ∬ f(x,y) dA = ∫<sub>${a}</sub><sup>${b}</sup> [ ∫<sub>${c}</sub><sup>${d}</sup> f(x,y) <strong>dy</strong> ] <strong>dx</strong><br>
 Both limits are constant → order can be reversed (Fubini's theorem).<br>
 Chosen order: integrate <strong>wrt y first</strong> (inner), then <strong>wrt x</strong> (outer).
 </div></div>
 ${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
-${_resultBlock(val)}`;
+${_resultBlock(val, exactTeX)}`,
+      exactVal: exactVal
+    };
   }
 
 }
@@ -299,13 +352,13 @@ ${_resultBlock(val)}`;
 /* ── Build steps HTML for triple integral ──────── */
 function buildStepsTriple(expr, coordSystem, a, b, c, d, e, f, N, val) {
   const dx = (b-a)/N, dy = (d-c)/N, dz = (f-e)/N;
-  const sym = recognizeConstant(val);
+  const recognized = recognizeConstant(val);
   const axes = { cartesian3d:['x','y','z'], cylindrical:['r','θ','z'], spherical:['ρ','φ','θ'] };
   const [a1,a2,a3] = axes[coordSystem] || ['x','y','z'];
   const jac = coordSystem==='cylindrical' ? '<em>Jacobian r applied automatically.</em>'
             : coordSystem==='spherical'   ? '<em>Jacobian ρ²sin(φ) applied automatically.</em>'
             : '';
-  return `
+  const html = `
   <div class="step-block">
     <div class="step-block-title">Step 1 — Integral Setup</div>
     <div class="step-content">
@@ -333,10 +386,11 @@ function buildStepsTriple(expr, coordSystem, a, b, c, d, e, f, N, val) {
   <div class="step-block">
     <div class="step-block-title">Step 4 — Final Result</div>
     <div class="step-content">
-      <div class="step-final-val">≈ ${val.toFixed(8)}</div>
-      ${sym ? `<div class="step-symbolic-val">= ${sym}</div>` : '<em>No common symbolic form recognised.</em>'}
+      <div class="step-final-val">${recognized ? '=' : '≈'} ${(recognized ? recognized.val : val).toFixed(recognized ? 4 : 8)}</div>
+      ${recognized ? `<div class="step-symbolic-val">= ${recognized.sym}</div>` : '<em>No common symbolic form recognised.</em>'}
     </div>
   </div>`;
+  return { html: html, exactVal: null };
 }
 
 /* ── Show / toggle steps card ──────────────────── */
@@ -419,9 +473,10 @@ function midpointDoubleVariableInner(fn, outerMin, outerMax, innerMinFn, innerMa
     const outer = outerMin + (i + 0.5) * dOuter;
     const innerMin = innerMinFn(outer);
     const innerMax = innerMaxFn(outer);
-    if (!(innerMax > innerMin)) {
-      throw new Error("Inner upper limit must be greater than inner lower limit throughout the outer interval.");
-    }
+    
+    // Gracefully skip if limits are invalid or equal at this slice
+    if (!(innerMax > innerMin)) continue;
+
     const dInner = (innerMax - innerMin) / n;
     for (let j = 0; j < n; j++) {
       const inner = innerMin + (j + 0.5) * dInner;
@@ -580,7 +635,7 @@ function renderDoubleVisualization(modeInfo) {
         const r = rVals[j];
         const x = r * Math.cos(theta);
         const y = r * Math.sin(theta);
-        const z = fn(r, theta, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log);
+        const z = fn(r, theta, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
         xRow.push(x);
         yRow.push(y);
         zRow.push(Number.isFinite(z) ? z : null);
@@ -591,7 +646,6 @@ function renderDoubleVisualization(modeInfo) {
     }
 
     renderSurfacePlot("Double Integral Surface (Polar)", xGrid, yGrid, zGrid);
-    setVizStatus("3D surface generated in Cartesian space from polar inputs.");
     return;
   }
 
@@ -615,7 +669,7 @@ function renderDoubleVisualization(modeInfo) {
       if (!validPoint) {
         row.push(null);
       } else {
-        const z = fn(x, y, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log);
+        const z = fn(x, y, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
         row.push(Number.isFinite(z) ? z : null);
       }
     }
@@ -623,7 +677,6 @@ function renderDoubleVisualization(modeInfo) {
   }
 
   renderSurfacePlot("Double Integral Surface", xVals, yVals, zGrid);
-  setVizStatus("3D function surface generated over the selected region.");
 }
 
 function estimateInnerRange(outerMin, outerMax, innerMinFn, innerMaxFn) {
@@ -658,7 +711,7 @@ function renderTripleVisualization(modeInfo) {
     for (const x of ax1) {
       for (const y of ax2) {
         for (const z of ax3) {
-          const v = fn(x, y, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log);
+          const v = fn(x, y, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
           if (Number.isFinite(v)) {
             points.x.push(x);
             points.y.push(y);
@@ -669,7 +722,6 @@ function renderTripleVisualization(modeInfo) {
       }
     }
     renderScatter3D("Triple Integral Domain (Cartesian)", points);
-    setVizStatus("3D point cloud generated for Cartesian volume.");
     return;
   }
 
@@ -680,7 +732,7 @@ function renderTripleVisualization(modeInfo) {
         for (const z of ax3) {
           const x = r * Math.cos(theta);
           const y = r * Math.sin(theta);
-          const v = fn(r, theta, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log);
+          const v = fn(r, theta, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
           if (Number.isFinite(v)) {
             points.x.push(x);
             points.y.push(y);
@@ -691,7 +743,6 @@ function renderTripleVisualization(modeInfo) {
       }
     }
     renderScatter3D("Triple Integral Domain (Cylindrical to Cartesian)", points);
-    setVizStatus("3D point cloud generated from cylindrical coordinates.");
     return;
   }
 
@@ -702,7 +753,7 @@ function renderTripleVisualization(modeInfo) {
         const x = rho * Math.sin(phi) * Math.cos(theta);
         const y = rho * Math.sin(phi) * Math.sin(theta);
         const z = rho * Math.cos(phi);
-        const v = fn(rho, phi, theta, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log);
+        const v = fn(rho, phi, theta, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
         if (Number.isFinite(v)) {
           points.x.push(x);
           points.y.push(y);
@@ -713,7 +764,6 @@ function renderTripleVisualization(modeInfo) {
     }
   }
   renderScatter3D("Triple Integral Domain (Spherical to Cartesian)", points);
-  setVizStatus("3D point cloud generated from spherical coordinates.");
 }
 
 function updateModeUI() {
@@ -884,8 +934,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
   const metaEl = document.getElementById("integralMeta");
   let vizContext = null;
   try {
-    const steps = 40;
     const mode = document.getElementById("mode").value;
+    const steps = mode === "double" ? 100 : 40;
     const coordSystem = document.getElementById("coordSystem").value;
     const expr = document.getElementById("funcInput").value.trim();
 
@@ -905,8 +955,10 @@ document.getElementById("solveBtn").addEventListener("click", () => {
         const wrapped = (r, theta) =>
           fn(r, theta, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E) * r;
         const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
-        displayResult(val, `Polar · Jacobian r · ${steps}×${steps} cells`);
-        showSteps(buildStepsDouble(expr, 'polar', a, b, c, d, steps, val, 'polar', '', ''));
+        const stepsRes = buildStepsDouble(expr, 'polar', a, b, c, d, steps, val, 'polar', '', '');
+        const isExact = stepsRes.exactVal !== null;
+        displayResult(isExact ? stepsRes.exactVal : val, `Polar · Jacobian r · ${steps}×${steps} cells`, isExact);
+        showSteps(stepsRes.html);
         vizContext = { mode: "double", coordSystem, expr, a, b, c, d };
       } else {
         const fn = safeCompile(expr, ["x", "y", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
@@ -930,8 +982,10 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             steps,
             "case1"
           );
-          displayResult(val, `Case 1: outer x∈[${a},${b}], inner y = [g₁(x), g₂(x)]`);
-          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, 0, 1, steps, val, 'case1', lowExpr, upExpr));
+          const stepsRes = buildStepsDouble(expr, 'cartesian2d', a, b, 0, 1, steps, val, 'case1', lowExpr, upExpr);
+          const isExact = stepsRes.exactVal !== null;
+          displayResult(isExact ? stepsRes.exactVal : val, `Case 1: outer x∈[${a},${b}], inner y = [g₁(x), g₂(x)]`, isExact);
+          showSteps(stepsRes.html);
           const range = estimateInnerRange(
             a,
             b,
@@ -969,8 +1023,10 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             steps,
             "case2"
           );
-          displayResult(val, `Case 2: outer y∈[${c},${d}], inner x = [h₁(y), h₂(y)]`);
-          showSteps(buildStepsDouble(expr, 'cartesian2d', 0, 1, c, d, steps, val, 'case2', lowExpr, upExpr));
+          const stepsRes = buildStepsDouble(expr, 'cartesian2d', 0, 1, c, d, steps, val, 'case2', lowExpr, upExpr);
+          const isExact = stepsRes.exactVal !== null;
+          displayResult(isExact ? stepsRes.exactVal : val, `Case 2: outer y∈[${c},${d}], inner x = [h₁(y), h₂(y)]`, isExact);
+          showSteps(stepsRes.html);
           const range = estimateInnerRange(
             c,
             d,
@@ -996,8 +1052,10 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             throw new Error("Ensure x max > x min and y max > y min.");
           }
           const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
-          displayResult(val, `Case 4 (separable): x∈[${a},${b}], y∈[${c},${d}]`);
-          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'case4', '', ''));
+          const stepsRes = buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'case4', '', '');
+          const isExact = stepsRes.exactVal !== null;
+          displayResult(isExact ? stepsRes.exactVal : val, `Case 4 (separable): x∈[${a},${b}], y∈[${c},${d}]`, isExact);
+          showSteps(stepsRes.html);
           vizContext = { mode: "double", coordSystem, expr, a, b, c, d, doubleCase };
         } else {
           const c = parseNumber("yMin");
@@ -1006,8 +1064,10 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             throw new Error("Ensure x max > x min and y max > y min.");
           }
           const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
-          displayResult(val, `Case 3 (rectangular): x∈[${a},${b}], y∈[${c},${d}]`);
-          showSteps(buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'case3', '', ''));
+          const stepsRes = buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'case3', '', '');
+          const isExact = stepsRes.exactVal !== null;
+          displayResult(isExact ? stepsRes.exactVal : val, `Case 3 (rectangular): x∈[${a},${b}], y∈[${c},${d}]`, isExact);
+          showSteps(stepsRes.html);
           vizContext = { mode: "double", coordSystem, expr, a, b, c, d, doubleCase };
         }
       }
@@ -1028,8 +1088,10 @@ document.getElementById("solveBtn").addEventListener("click", () => {
         const wrapped = (r, theta, z) =>
           fn(r, theta, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E) * r;
         const val = midpointTripleIntegral(wrapped, a, b, c, d, e, f, steps);
-        displayResult(val, `Cylindrical · Jacobian r · ${steps}³ cells`);
-        showSteps(buildStepsTriple(expr, 'cylindrical', a, b, c, d, e, f, steps, val));
+        const stepsRes = buildStepsTriple(expr, 'cylindrical', a, b, c, d, e, f, steps, val);
+        const isExact = stepsRes.exactVal !== undefined && stepsRes.exactVal !== null;
+        displayResult(isExact ? stepsRes.exactVal : val, `Cylindrical · Jacobian r · ${steps}³ cells`, isExact);
+        showSteps(stepsRes.html);
         vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
       } else if (coordSystem === "spherical") {
         const fn = safeCompile(expr, ["rho", "phi", "theta", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
@@ -1039,16 +1101,20 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           rho *
           Math.sin(phi);
         const val = midpointTripleIntegral(wrapped, a, b, c, d, e, f, steps);
-        displayResult(val, `Spherical · Jacobian ρ²sin(φ) · ${steps}³ cells`);
-        showSteps(buildStepsTriple(expr, 'spherical', a, b, c, d, e, f, steps, val));
+        const stepsRes = buildStepsTriple(expr, 'spherical', a, b, c, d, e, f, steps, val);
+        const isExact = stepsRes.exactVal !== undefined && stepsRes.exactVal !== null;
+        displayResult(isExact ? stepsRes.exactVal : val, `Spherical · Jacobian ρ²sin(φ) · ${steps}³ cells`, isExact);
+        showSteps(stepsRes.html);
         vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
       } else {
         const fn = safeCompile(expr, ["x", "y", "z", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
         const wrapped = (x, y, z) =>
           fn(x, y, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
         const val = midpointTripleIntegral(wrapped, a, b, c, d, e, f, steps);
-        displayResult(val, `Cartesian · ${steps}³ midpoint cells`);
-        showSteps(buildStepsTriple(expr, 'cartesian3d', a, b, c, d, e, f, steps, val));
+        const stepsRes = buildStepsTriple(expr, 'cartesian3d', a, b, c, d, e, f, steps, val);
+        const isExact = stepsRes.exactVal !== undefined && stepsRes.exactVal !== null;
+        displayResult(isExact ? stepsRes.exactVal : val, `Cartesian · ${steps}³ midpoint cells`, isExact);
+        showSteps(stepsRes.html);
         vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
       }
     }
