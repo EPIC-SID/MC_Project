@@ -1005,148 +1005,74 @@ function renderTripleVisualization(modeInfo) {
 }
 
 function updateModeUI() {
-  const mode = document.getElementById("mode").value;
+  const mode = document.getElementById("mode");
   const coordSystem = document.getElementById("coordSystem");
-  const currentCoord = coordSystem.value;
-  const lastMode = coordSystem.dataset.mode;
-  const zMinWrap = document.getElementById("zMinWrap");
-  const zMaxWrap = document.getElementById("zMaxWrap");
-  const funcInput = document.getElementById("funcInput");
-  const xMinLabel = document.querySelector("label[for='xMin']");
-  const xMaxLabel = document.querySelector("label[for='xMax']");
-  const yMinLabel = document.querySelector("label[for='yMin']");
-  const yMaxLabel = document.querySelector("label[for='yMax']");
-  const zMinLabel = document.querySelector("label[for='zMin']");
-  const zMaxLabel = document.querySelector("label[for='zMax']");
-  const xMinWrap = document.getElementById("xMinWrap");
-  const xMaxWrap = document.getElementById("xMaxWrap");
-  const yMinWrap = document.getElementById("yMinWrap");
-  const yMaxWrap = document.getElementById("yMaxWrap");
-  const doubleCaseWrap = document.getElementById("doubleCaseWrap");
   const doubleCase = document.getElementById("doubleCase");
+  const doubleCaseWrap = document.getElementById("doubleCaseWrap");
+  
+  const xMinWrap = document.getElementById("xMinWrap");
+  const yMinWrap = document.getElementById("yMinWrap");
+  const zMinWrap = document.getElementById("zMinWrap");
   const innerLowerWrap = document.getElementById("innerLowerWrap");
   const innerUpperWrap = document.getElementById("innerUpperWrap");
+  
+  const funcInput = document.getElementById("funcInput");
 
-  if (mode === "double") {
-    if (lastMode !== "double") {
-      coordSystem.innerHTML =
-        "<option value='cartesian2d'>Cartesian (x,y)</option><option value='polar'>Polar (r,theta)</option>";
-      coordSystem.value = currentCoord === "polar" ? "polar" : "cartesian2d";
+  if (!mode || !coordSystem || !doubleCase) return; // safeguard
+
+  // Reset all visibility
+  xMinWrap.classList.add("hidden");
+  yMinWrap.classList.add("hidden");
+  zMinWrap.classList.add("hidden");
+  innerLowerWrap.classList.add("hidden");
+  innerUpperWrap.classList.add("hidden");
+
+  if (mode.value === "double") {
+    // Populate coord options
+    if (coordSystem.options.length !== 2 || coordSystem.options[0].value !== "cartesian2d") {
+      coordSystem.innerHTML = `
+        <option value="cartesian2d">Cartesian (x,y)</option>
+        <option value="polar">Polar (r,θ)</option>
+      `;
     }
-    coordSystem.dataset.mode = "double";
-    zMinWrap.classList.add("hidden");
-    zMaxWrap.classList.add("hidden");
-    zMinLabel.textContent = "z min";
-    zMaxLabel.textContent = "z max";
-    if (coordSystem.value === "cartesian2d") {
-      doubleCaseWrap.classList.remove("hidden");
-    } else {
-      doubleCaseWrap.classList.add("hidden");
-    }
+    
     if (coordSystem.value === "polar") {
+      doubleCaseWrap.classList.add("hidden");
       xMinWrap.classList.remove("hidden");
-      xMaxWrap.classList.remove("hidden");
       yMinWrap.classList.remove("hidden");
-      yMaxWrap.classList.remove("hidden");
-      xMinLabel.textContent = "r min";
-      xMaxLabel.textContent = "r max";
-      yMinLabel.textContent = "theta min";
-      yMaxLabel.textContent = "theta max";
+      xMinWrap.querySelector(".sc-limit-label").textContent = "Outer (dr)";
+      yMinWrap.querySelector(".sc-limit-label").textContent = "Inner (dθ)";
+      
       if (funcInput.value.trim() === "" || funcInput.value.includes("x") || funcInput.value.includes("z")) {
         funcInput.value = "r";
       }
-      innerLowerWrap.classList.add("hidden");
-      innerUpperWrap.classList.add("hidden");
     } else {
-      xMinLabel.textContent = "x min";
-      xMaxLabel.textContent = "x max";
-      yMinLabel.textContent = "y min";
-      yMaxLabel.textContent = "y max";
+      doubleCaseWrap.classList.remove("hidden");
+      xMinWrap.querySelector(".sc-limit-label").textContent = "Outer (dx)";
+      yMinWrap.querySelector(".sc-limit-label").textContent = "Inner (dy)";
+      
       if (funcInput.value.trim() === "" || funcInput.value.includes("z")) {
         funcInput.value = "x*y";
       }
+
       if (doubleCase.value === "case1") {
         xMinWrap.classList.remove("hidden");
-        xMaxWrap.classList.remove("hidden");
-        yMinWrap.classList.add("hidden");
-        yMaxWrap.classList.add("hidden");
         innerLowerWrap.classList.remove("hidden");
         innerUpperWrap.classList.remove("hidden");
-        document.querySelector("label[for='innerLower']").textContent = "Inner y lower: g1(x)";
-        document.querySelector("label[for='innerUpper']").textContent = "Inner y upper: g2(x)";
+        innerLowerWrap.querySelector(".sc-limit-label").textContent = "Inner y lower limit (g₁(x))";
+        innerUpperWrap.querySelector(".sc-limit-label").textContent = "Inner y upper limit (g₂(x))";
       } else if (doubleCase.value === "case2") {
-        xMinWrap.classList.add("hidden");
-        xMaxWrap.classList.add("hidden");
         yMinWrap.classList.remove("hidden");
-        yMaxWrap.classList.remove("hidden");
         innerLowerWrap.classList.remove("hidden");
         innerUpperWrap.classList.remove("hidden");
-        document.querySelector("label[for='innerLower']").textContent = "Inner x lower: h1(y)";
-        document.querySelector("label[for='innerUpper']").textContent = "Inner x upper: h2(y)";
+        innerLowerWrap.querySelector(".sc-limit-label").textContent = "Inner x lower limit (h₁(y))";
+        innerUpperWrap.querySelector(".sc-limit-label").textContent = "Inner x upper limit (h₂(y))";
       } else {
         xMinWrap.classList.remove("hidden");
-        xMaxWrap.classList.remove("hidden");
         yMinWrap.classList.remove("hidden");
-        yMaxWrap.classList.remove("hidden");
-        innerLowerWrap.classList.add("hidden");
-        innerUpperWrap.classList.add("hidden");
       }
     }
-    }
-    /*
-    else {
-      if (lastMode !== "triple") {
-        coordSystem.innerHTML =
-          "<option value='cartesian3d'>Cartesian (x,y,z)</option><option value='cylindrical'>Cylindrical (r,theta,z)</option><option value='spherical'>Spherical (rho,phi,theta)</option>";
-        if (currentCoord === "cylindrical" || currentCoord === "spherical") {
-          coordSystem.value = currentCoord;
-        } else {
-          coordSystem.value = "cartesian3d";
-        }
-      }
-      coordSystem.dataset.mode = "triple";
-      doubleCaseWrap.classList.add("hidden");
-      innerLowerWrap.classList.add("hidden");
-      innerUpperWrap.classList.add("hidden");
-      zMinWrap.classList.remove("hidden");
-      zMaxWrap.classList.remove("hidden");
-      xMinWrap.classList.remove("hidden");
-      xMaxWrap.classList.remove("hidden");
-      yMinWrap.classList.remove("hidden");
-      yMaxWrap.classList.remove("hidden");
-      if (coordSystem.value === "cylindrical") {
-        xMinLabel.textContent = "r min";
-        xMaxLabel.textContent = "r max";
-        yMinLabel.textContent = "theta min";
-        yMaxLabel.textContent = "theta max";
-        zMinLabel.textContent = "z min";
-        zMaxLabel.textContent = "z max";
-        if (funcInput.value.trim() === "" || funcInput.value.includes("x")) {
-          funcInput.value = "r*z";
-        }
-      } else if (coordSystem.value === "spherical") {
-        xMinLabel.textContent = "rho min";
-        xMaxLabel.textContent = "rho max";
-        yMinLabel.textContent = "phi min";
-        yMaxLabel.textContent = "phi max";
-        zMinLabel.textContent = "theta min";
-        zMaxLabel.textContent = "theta max";
-        if (funcInput.value.trim() === "" || funcInput.value.includes("x")) {
-          funcInput.value = "rho*rho*sin(phi)";
-        }
-      } else {
-        xMinLabel.textContent = "x min";
-        xMaxLabel.textContent = "x max";
-        yMinLabel.textContent = "y min";
-        yMaxLabel.textContent = "y max";
-        zMinLabel.textContent = "z min";
-        zMaxLabel.textContent = "z max";
-        if (funcInput.value.trim() === "" || !funcInput.value.includes("z")) {
-          funcInput.value = "x*y + z";
-        }
-      }
-    }
-    */
+  }
 }
 
 function switchTab(tabId) {
@@ -1383,59 +1309,55 @@ document.getElementById("solveBtn").addEventListener("click", () => {
   }
 });
 
+
+
+const examples = [
+  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case1", func: "x^2 + y^2", xMin: "0", xMax: "2", yMin: "", yMax: "", innerLower: "0", innerUpper: "x" },
+  { mode: "double", coordSystem: "polar", doubleCase: "case3", func: "r^2 * cos(theta)", xMin: "0", xMax: "1", yMin: "0", yMax: "3.14159", innerLower: "", innerUpper: "" },
+  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case2", func: "exp(x+y)", xMin: "", xMax: "", yMin: "0", yMax: "1", innerLower: "y", innerUpper: "1" },
+  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case3", func: "sin(x) * cos(y)", xMin: "0", xMax: "3.14159", yMin: "0", yMax: "1.57079", innerLower: "", innerUpper: "" },
+  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case1", func: "x*y", xMin: "0", xMax: "1", yMin: "", yMax: "", innerLower: "x^2", innerUpper: "x" },
+  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case4", func: "x^3 + y^3", xMin: "-1", xMax: "1", yMin: "-1", yMax: "1", innerLower: "", innerUpper: "" },
+  { mode: "double", coordSystem: "polar", doubleCase: "case3", func: "r * sin(theta)", xMin: "0", xMax: "2", yMin: "0", yMax: "6.28318", innerLower: "", innerUpper: "" },
+  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case2", func: "x * exp(y)", xMin: "", xMax: "", yMin: "0", yMax: "1", innerLower: "0", innerUpper: "y" },
+  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case1", func: "1/(x^2 + y^2 + 1)", xMin: "0", xMax: "1", yMin: "", yMax: "", innerLower: "0", innerUpper: "1-x" },
+  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case3", func: "exp(-x^2 - y^2)", xMin: "-2", xMax: "2", yMin: "-2", yMax: "2", innerLower: "", innerUpper: "" }
+];
+
+let currentExampleIndex = -1;
+
 document.getElementById("exampleBtn").addEventListener("click", () => {
-  const mode = document.getElementById("mode").value;
-  const coordSystem = document.getElementById("coordSystem").value;
-  if (mode === "double") {
-    if (coordSystem === "polar") {
-      document.getElementById("funcInput").value = "r";
-      document.getElementById("xMin").value = "0";
-      document.getElementById("xMax").value = "2";
-      document.getElementById("yMin").value = "0";
-      document.getElementById("yMax").value = "3.141592653589793";
-    } else {
-      const doubleCase = document.getElementById("doubleCase").value;
-      document.getElementById("funcInput").value = "x + y";
-      document.getElementById("xMin").value = "0";
-      document.getElementById("xMax").value = "1";
-      document.getElementById("yMin").value = "0";
-      document.getElementById("yMax").value = "1";
-      if (doubleCase === "case1") {
-        document.getElementById("innerLower").value = "0";
-        document.getElementById("innerUpper").value = "x";
-      } else if (doubleCase === "case2") {
-        document.getElementById("innerLower").value = "0";
-        document.getElementById("innerUpper").value = "1-y";
-      }
-    }
-    }
-    /*
-    else if (coordSystem === "cylindrical") {
-      document.getElementById("funcInput").value = "r*z";
-      document.getElementById("xMin").value = "0";
-      document.getElementById("xMax").value = "1";
-      document.getElementById("yMin").value = "0";
-      document.getElementById("yMax").value = "6.283185307179586";
-      document.getElementById("zMin").value = "0";
-      document.getElementById("zMax").value = "2";
-    } else if (coordSystem === "spherical") {
-      document.getElementById("funcInput").value = "1";
-      document.getElementById("xMin").value = "0";
-      document.getElementById("xMax").value = "1";
-      document.getElementById("yMin").value = "0";
-      document.getElementById("yMax").value = "3.141592653589793";
-      document.getElementById("zMin").value = "0";
-      document.getElementById("zMax").value = "6.283185307179586";
-    } else {
-      document.getElementById("funcInput").value = "x*y + z";
-      document.getElementById("xMin").value = "0";
-      document.getElementById("xMax").value = "1";
-      document.getElementById("yMin").value = "0";
-      document.getElementById("yMax").value = "1";
-      document.getElementById("zMin").value = "0";
-      document.getElementById("zMax").value = "1";
-    }
-    */
+  let newIndex;
+  do {
+    newIndex = Math.floor(Math.random() * examples.length);
+  } while (newIndex === currentExampleIndex && examples.length > 1);
+  currentExampleIndex = newIndex;
+  
+  const example = examples[newIndex];
+  
+  document.getElementById("mode").value = example.mode || "double";
+  updateModeUI();
+  
+  if (example.coordSystem) document.getElementById("coordSystem").value = example.coordSystem;
+  if (example.doubleCase) document.getElementById("doubleCase").value = example.doubleCase;
+  
+  updateModeUI(); // to reflect changes
+  
+  document.getElementById("funcInput").value = example.func || "";
+  if (example.xMin !== undefined) document.getElementById("xMin").value = example.xMin;
+  if (example.xMax !== undefined) document.getElementById("xMax").value = example.xMax;
+  if (example.yMin !== undefined) document.getElementById("yMin").value = example.yMin;
+  if (example.yMax !== undefined) document.getElementById("yMax").value = example.yMax;
+  if (example.innerLower !== undefined) document.getElementById("innerLower").value = example.innerLower;
+  if (example.innerUpper !== undefined) document.getElementById("innerUpper").value = example.innerUpper;
+  
+  // Match Vercel behavior: clear bottom panel and desmos plot explicitly so the user can manually click 'Compute Integral'
+  document.getElementById("integralResult").textContent = "Ready";
+  document.getElementById("integralMeta").textContent = "Click Compute Integral to evaluate.";
+  document.getElementById("integralSymbolic").style.display = "none";
+  document.getElementById("stepsCard").style.display = "none";
+  document.getElementById("simBottomRow").style.display = "none";
+  clearDesmos();
 });
 
 document.getElementById("resetBtn").addEventListener("click", () => {
