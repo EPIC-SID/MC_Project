@@ -519,22 +519,75 @@ function parseNumber(id) {
 
 function scoreForm(formId, outputId) {
   const form = document.getElementById(formId);
-  const answers = new FormData(form);
-  let total = 0;
-  let count = 0;
-  for (const [, value] of answers.entries()) {
-    total += Number(value);
-    count += 1;
-  }
-  const el = document.getElementById(outputId);
-  el.classList.remove('hidden');
-  if (count === 0) {
-    el.textContent = "Please answer all questions.";
+  const el   = document.getElementById(outputId);
+
+  // Collect all unique question names from radio inputs
+  const questionNames = [...new Set(
+    [...form.querySelectorAll('input[type="radio"]')].map(r => r.name)
+  )];
+  const totalQuestions = questionNames.length;
+
+  // Validate every question has been answered
+  const unanswered = questionNames.filter(
+    name => !form.querySelector(`input[name="${name}"]:checked`)
+  );
+  if (unanswered.length > 0) {
+    el.classList.remove('hidden');
+    el.style.cssText = 'background:var(--warn-bg);border-color:#f0c060;color:var(--warn);';
+    el.innerHTML = `⚠️ Please answer <strong>all ${totalQuestions} questions</strong> before submitting. `
+                 + `(${unanswered.length} unanswered)`;
     return;
   }
-  const pct = Math.round((total / count) * 100);
+
+  // Count correct answers (value="1" = correct, value="0" = wrong)
+  let correct = 0;
+  questionNames.forEach(name => {
+    const checked = form.querySelector(`input[name="${name}"]:checked`);
+    if (checked && Number(checked.value) === 1) correct++;
+  });
+
+  // Highlight each question card green / red
+  questionNames.forEach(name => {
+    const checked = form.querySelector(`input[name="${name}"]:checked`);
+    const card    = checked.closest('.question-card');
+    const isRight = Number(checked.value) === 1;
+    card.style.borderColor = isRight ? '#1a9e6a' : '#ef4444';
+    card.style.background  = isRight ? '#e8f8f0'  : '#fee2e2';
+  });
+
+  const pct   = Math.round((correct / totalQuestions) * 100);
   const emoji = pct === 100 ? '🏆' : pct >= 66 ? '✅' : pct >= 33 ? '⚠️' : '❌';
-  el.innerHTML = `${emoji} Score: <strong>${total} / ${count}</strong> &nbsp;·&nbsp; ${pct}% correct`;
+  const grade = pct === 100 ? 'Perfect score!'
+              : pct >= 66   ? 'Good job!'
+              : pct >= 33   ? 'Keep practicing.'
+              : 'Review the material and try again.';
+
+  el.classList.remove('hidden');
+  el.style.cssText = '';
+  el.innerHTML =
+    `${emoji} Score: <strong>${correct} / ${totalQuestions}</strong> &nbsp;·&nbsp; `
+    + `${pct}% correct &nbsp;·&nbsp; <em>${grade}</em>`
+    + `<br><button type="button" class="btn btn-ghost btn-sm" `
+    + `style="margin-top:10px;" onclick="retryQuiz('${formId}','${outputId}')">🔄 Retry Quiz</button>`;
+}
+
+function retryQuiz(formId, outputId) {
+  const form = document.getElementById(formId);
+  const el   = document.getElementById(outputId);
+
+  // Uncheck all radio buttons
+  form.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+
+  // Reset question card highlight colours
+  form.querySelectorAll('.question-card').forEach(card => {
+    card.style.borderColor = '';
+    card.style.background  = '';
+  });
+
+  // Hide result panel
+  el.classList.add('hidden');
+  el.innerHTML = '';
+  el.style.cssText = '';
 }
 
 function setVizStatus(message) {
@@ -554,6 +607,149 @@ function clearVisualization(message) {
   const viz = document.getElementById("viz3d");
   if (window.Plotly) { window.Plotly.purge(viz); }
   setVizStatus(message || "Graph unavailable for this selection.");
+  clearDesmos();
+}
+
+/* ── Desmos 3D Visualization ─────────────────────── */
+let desmosCalc = null;
+let desmosIs3D = false;
+
+function initDesmos() {
+  const el = document.getElementById('desmosDiv');
+  if (!el || typeof Desmos === 'undefined') return;
+  try {
+    desmosCalc = Desmos.Calculator3D(el, {
+      expressions: false, settingsMenu: false,
+      zoomButtons: true, keypad: false, border: false,
+    });
+    desmosIs3D = true;
+  } catch (e) {
+    // fallback to 2D if 3D not available
+    desmosCalc = Desmos.GraphingCalculator(el, {
+      expressions: false, settingsMenu: false,
+      zoomButtons: true, keypad: false,
+      border: false, lockViewport: false,
+      backgroundColor: '#f8fbff',
+    });
+    desmosIs3D = false;
+  }
+}
+
+function clearDesmos() {
+  const el = document.getElementById('desmosDiv');
+  const st = document.getElementById('desmosStatus');
+  if (el) el.style.display = 'none';
+  if (st) st.style.display = 'block';
+  if (desmosCalc) desmosCalc.setBlank();
+}
+
+// JS math syntax → Desmos LaTeX
+function jsToDesmos(expr) {
+  return String(expr)
+    .replace(/\*\*/g, '^')
+    .replace(/\bsqrt\s*\(([^)]+)\)/g, '\\sqrt{$1}')
+    .replace(/\babs\s*\(([^)]+)\)/g,  '\\left|$1\\right|')
+    .replace(/\bsin\b/g,  '\\sin').replace(/\bcos\b/g, '\\cos')
+    .replace(/\btan\b/g,  '\\tan').replace(/\bln\b/g,  '\\ln')
+    .replace(/\bexp\s*\(([^)]+)\)/g, 'e^{$1}')
+    .replace(/\bPI\b/g,   '\\pi').replace(/\bpi\b/gi, '\\pi')
+    .replace(/\btheta\b/g,'\\theta')
+    .replace(/([0-9])\s*\*\s*([a-zA-Z(\\])/g, '$1$2')  // 2*x → 2x
+    .replace(/([a-zA-Z])\s*\*\s*([a-zA-Z(\\])/g, '$1$2') // x*y → xy
+    .replace(/\s*\*\s*/g, '\\cdot ');                    // remaining * → ·
+}
+
+function renderDesmosRegion(modeInfo) {
+  if (!desmosCalc) return;
+  desmosCalc.setBlank();
+
+  const el = document.getElementById('desmosDiv');
+  const st = document.getElementById('desmosStatus');
+  if (el) el.style.display = 'block';
+  if (st) st.style.display = 'none';
+
+  const BLU = '#0078d4', GRN = '#1a9e6a', GRY = '#a0aec0';
+  const { a, b, coordSystem, doubleCase, expr } = modeInfo;
+  const c = modeInfo.c ?? 0, d = modeInfo.d ?? 1;
+  const fTex = jsToDesmos(expr);
+
+  if (desmosIs3D) {
+    // ── 3D MODE: show z = f(x,y) surface + solid volume ──────────────
+    let domX, domY;
+
+    if (coordSystem === 'polar') {
+      // Polar: draw surface z=f(r,θ) parametrically + boundary circles
+      // Boundary circles at r=a and r=b (in Cartesian for 3D)
+      const fPolar = jsToDesmos(expr.replace(/\br\b/g, '\\sqrt{x^2+y^2}')
+                                    .replace(/\btheta\b/g, '\\operatorname{arctan}\\left(y,x\\right)'));
+      desmosCalc.setExpression({
+        id: 'surf', latex: `z=${fPolar}\\left\\{${a}^{2}\\le x^{2}+y^{2}\\le ${b}^{2}\\right\\}`, color: BLU
+      });
+      desmosCalc.setExpression({
+        id: 'vol',  latex: `0\\le z\\le ${fPolar}\\left\\{${a}^{2}\\le x^{2}+y^{2}\\le ${b}^{2}\\right\\}`, color: BLU
+      });
+      desmosCalc.setExpression({ id: 'c1', latex: `x^{2}+y^{2}=${a}^{2}`, color: GRY });
+      desmosCalc.setExpression({ id: 'c2', latex: `x^{2}+y^{2}=${b}^{2}`, color: GRY });
+      return;
+    }
+
+    // Build domain restriction strings
+    domX = `\\left\\{${a}\\le x\\le ${b}\\right\\}`;
+    if (doubleCase === 'case1') {
+      const lo = jsToDesmos(modeInfo.lowExpr || '0');
+      const hi = jsToDesmos(modeInfo.upExpr  || 'x');
+      domY = `\\left\\{${lo}\\le y\\le ${hi}\\right\\}`;
+    } else if (doubleCase === 'case2') {
+      const lo = jsToDesmos(modeInfo.lowExpr || '0');
+      const hi = jsToDesmos(modeInfo.upExpr  || 'y');
+      domX = `\\left\\{${lo}\\le x\\le ${hi}\\right\\}`;
+      domY = `\\left\\{${c}\\le y\\le ${d}\\right\\}`;
+    } else {
+      domY = `\\left\\{${c}\\le y\\le ${d}\\right\\}`;
+    }
+
+    // Top surface z = f(x,y)
+    desmosCalc.setExpression({
+      id: 'surf', latex: `z=${fTex}${domX}${domY}`, color: BLU,
+    });
+    // Solid volume 0 ≤ z ≤ f(x,y) — the actual double integral volume
+    desmosCalc.setExpression({
+      id: 'vol', latex: `0\\le z\\le ${fTex}${domX}${domY}`, color: BLU,
+    });
+    // Floor outline at z = 0
+    desmosCalc.setExpression({
+      id: 'floor', latex: `z=0${domX}${domY}`, color: GRY,
+    });
+
+  } else {
+    // ── 2D FALLBACK: shade the region R in the xy-plane ──────────────
+    if (coordSystem === 'polar') {
+      desmosCalc.setExpression({ id: 'r1',   latex: `x^2+y^2=${a}^2`, color: BLU, lineWidth: 2 });
+      desmosCalc.setExpression({ id: 'r2',   latex: `x^2+y^2=${b}^2`, color: GRN, lineWidth: 2 });
+      desmosCalc.setExpression({ id: 'fill', latex: `${a}^2\\le x^2+y^2\\le ${b}^2`, color: BLU });
+      const R = b + 0.5;
+      desmosCalc.setMathBounds({ left: -R, right: R, bottom: -R, top: R });
+      return;
+    }
+    if (doubleCase === 'case1') {
+      const lo = jsToDesmos(modeInfo.lowExpr || '0');
+      const hi = jsToDesmos(modeInfo.upExpr  || 'x');
+      desmosCalc.setExpression({ id: 'fill', latex: `${lo}\\le y\\le ${hi}\\left\\{${a}\\le x\\le ${b}\\right\\}`, color: BLU });
+      desmosCalc.setExpression({ id: 'lo_c', latex: `y=${lo}`, color: BLU, lineWidth: 2.5 });
+      desmosCalc.setExpression({ id: 'hi_c', latex: `y=${hi}`, color: GRN, lineWidth: 2.5 });
+    } else if (doubleCase === 'case2') {
+      const lo = jsToDesmos(modeInfo.lowExpr || '0');
+      const hi = jsToDesmos(modeInfo.upExpr  || 'y');
+      desmosCalc.setExpression({ id: 'fill', latex: `${lo}\\le x\\le ${hi}\\left\\{${c}\\le y\\le ${d}\\right\\}`, color: BLU });
+      desmosCalc.setExpression({ id: 'lo_c', latex: `x=${lo}`, color: BLU, lineWidth: 2.5 });
+      desmosCalc.setExpression({ id: 'hi_c', latex: `x=${hi}`, color: GRN, lineWidth: 2.5 });
+    } else {
+      desmosCalc.setExpression({ id: 'fill', latex: `${c}\\le y\\le ${d}\\left\\{${a}\\le x\\le ${b}\\right\\}`, color: BLU });
+    }
+    const xPad = Math.max(0.5, (b - a) * 0.25);
+    const yPad = Math.max(0.5, (d - c) * 0.25);
+    desmosCalc.setMathBounds({ left: a - xPad, right: b + xPad, bottom: c - yPad, top: d + yPad });
+  }
 }
 
 function sampleRange(min, max, count) {
@@ -571,24 +767,79 @@ function sampleRange(min, max, count) {
 function renderSurfacePlot(title, xVals, yVals, zGrid) {
   if (!window.Plotly) { setVizStatus("3D library failed to load."); return; }
   setVizStatus(null);
+
+  const nx = xVals.length;
+  const ny = yVals.length;
+
+  /* ── 1. Main surface z = f(x,y) — semi-transparent ── */
+  const surfaceTrace = {
+    type: "surface",
+    x: xVals, y: yVals, z: zGrid,
+    colorscale: "Blues",
+    opacity: 0.82,
+    showscale: false,
+    name: "f(x,y)",
+    hovertemplate: "x: %{x:.3f}<br>y: %{y:.3f}<br>f: %{z:.4f}<extra></extra>",
+  };
+
+  /* ── 2. Floor plane z = 0 — shows region R ── */
+  const zFloor = yVals.map(() => xVals.map(() => 0));
+  const floorTrace = {
+    type: "surface",
+    x: xVals, y: yVals, z: zFloor,
+    colorscale: [[0, "rgba(0,91,170,0.18)"], [1, "rgba(0,91,170,0.18)"]],
+    showscale: false,
+    opacity: 0.55,
+    name: "Region R (z=0)",
+    hoverinfo: "skip",
+  };
+
+  /* ── helper: build one curtain wall ── */
+  function makeCurtain(xArr, yArr, zTop) {
+    // two-row surface: bottom row at z=0, top row at z=f
+    const zBot = zTop.map(() => 0);
+    return {
+      type: "surface",
+      x: [xArr, xArr],
+      y: [yArr, yArr],
+      z: [zBot, zTop],
+      colorscale: [[0, "rgba(0,120,212,0.10)"], [1, "rgba(0,120,212,0.28)"]],
+      showscale: false,
+      opacity: 0.55,
+      hoverinfo: "skip",
+    };
+  }
+
+  /* ── 3. Four curtain walls ── */
+  // Front (y = yVals[0]):   z values = zGrid[0][j]
+  const frontCurtain = makeCurtain(xVals, xVals.map(() => yVals[0]),      zGrid[0]);
+  // Back  (y = yVals[ny-1]): z values = zGrid[ny-1][j]
+  const backCurtain  = makeCurtain(xVals, xVals.map(() => yVals[ny - 1]), zGrid[ny - 1]);
+  // Left  (x = xVals[0]):   z values = zGrid[i][0]
+  const leftCurtain  = makeCurtain(yVals.map(() => xVals[0]),      yVals, zGrid.map(row => row[0]));
+  // Right (x = xVals[nx-1]): z values = zGrid[i][nx-1]
+  const rightCurtain = makeCurtain(yVals.map(() => xVals[nx - 1]), yVals, zGrid.map(row => row[nx - 1]));
+
   window.Plotly.newPlot(
     "viz3d",
-    [{ type: "surface", x: xVals, y: yVals, z: zGrid, colorscale: "Blues" }],
+    [floorTrace, frontCurtain, backCurtain, leftCurtain, rightCurtain, surfaceTrace],
     {
-      title,
+      title: { text: title, font: { size: 13, color: '#1a2a3a' } },
       paper_bgcolor: '#ffffff', plot_bgcolor: '#f8fbff',
       font: { color: '#4a6080', size: 11 },
-      margin: { l: 0, r: 0, b: 0, t: 36 },
+      margin: { l: 0, r: 0, b: 0, t: 40 },
+      showlegend: false,
       scene: {
         xaxis: { title: "X", gridcolor: '#dce6f0', zerolinecolor: '#b3d4f5' },
         yaxis: { title: "Y", gridcolor: '#dce6f0', zerolinecolor: '#b3d4f5' },
-        zaxis: { title: "f", gridcolor: '#dce6f0', zerolinecolor: '#b3d4f5' },
+        zaxis: { title: "f(x,y)", gridcolor: '#dce6f0', zerolinecolor: '#b3d4f5', rangemode: 'tozero' },
         bgcolor: '#f0f4f8',
       },
     },
     { responsive: true }
   );
 }
+
 
 function renderScatter3D(title, points) {
   if (!window.Plotly) { setVizStatus("3D library failed to load."); return; }
@@ -1006,6 +1257,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             doubleCase,
             lowFn: (x) => lowFn(x, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
             upFn: (x) => upFn(x, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+            lowExpr, upExpr,
           };
         } else if (doubleCase === "case2") {
           const c = parseNumber("yMin");
@@ -1047,6 +1299,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             b: Number.isFinite(a) && Number.isFinite(b) && b > a ? b : range ? range.max : 1,
             lowFn: (y) => lowFn(y, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
             upFn: (y) => upFn(y, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+            lowExpr, upExpr,
           };
         } else if (doubleCase === "case4") {
           const c = parseNumber("yMin");
@@ -1127,6 +1380,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
     if (vizContext) {
       if (vizContext.mode === "double") {
         renderDoubleVisualization(vizContext);
+        renderDesmosRegion(vizContext);
       } else {
         renderTripleVisualization(vizContext);
       }
@@ -1234,6 +1488,7 @@ document.getElementById("feedbackForm").addEventListener("submit", (event) => {
 updateModeUI();
 switchTab("aimTab");
 clearVisualization("Graph will appear after computation.");
+initDesmos();
 
 document.getElementById('stepsToggle').addEventListener('click', () => {
   const head    = document.getElementById('stepsToggle');

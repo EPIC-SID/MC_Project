@@ -51,7 +51,7 @@
           <div class="aim-icon">∫∫</div>
           <div>
             <h2 class="section-title">Aim of this Experiment</h2>
-            <p class="section-desc">To understand double and triple integration, perform conversion of double integrals into polar form, and apply multiple integrals to compute area and volume, including Dirichlet's theorem.</p>
+            <p class="section-desc">To understand double integration, perform conversion of double integrals into polar form, and apply multiple integrals to compute area and volume.</p>
           </div>
         </div>
         <p style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:14px;font-weight:700;">Scope Covered</p>
@@ -62,6 +62,31 @@
           <div class="scope-card"><div class="scope-num">04</div><p>Triple integration over solid regions</p></div>
           <div class="scope-card"><div class="scope-num">05</div><p>Dirichlet's theorem and Gamma function applications</p></div>
           <div class="scope-card"><div class="scope-num">06</div><p>Application of triple integration to volume</p></div>
+        </div>
+
+        <p style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin:28px 0 14px;font-weight:700;">Visual Overview</p>
+        <div class="aim-img-grid">
+          <div class="aim-img-card">
+            <img src="aim_cartesian.png" alt="Double integral in Cartesian coordinates showing surface z=f(x,y) above region R with area element dA = dx dy" />
+            <div class="aim-img-caption">
+              <div class="aim-img-label">Cartesian Form</div>
+              <p>The surface z = f(x,y) above a rectangular region R. Each small tile has area dA = dx&nbsp;dy, and the double integral sums f over all tiles.</p>
+            </div>
+          </div>
+          <div class="aim-img-card">
+            <img src="aim_polar.png" alt="Double integral in polar coordinates showing circular region with area element dA = r dr dθ and Jacobian factor r" />
+            <div class="aim-img-caption">
+              <div class="aim-img-label">Polar Form</div>
+              <p>Using x = r&nbsp;cos&theta;, y = r&nbsp;sin&theta;. The area element becomes dA = r&nbsp;dr&nbsp;d&theta;, where r is the <em>Jacobian</em> of the transformation.</p>
+            </div>
+          </div>
+          <div class="aim-img-card">
+            <img src="aim_application.png" alt="Application of double integrals: shaded planar area on left and 3D volume under surface on right" />
+            <div class="aim-img-caption">
+              <div class="aim-img-label">Area &amp; Volume</div>
+              <p>Setting f = 1 gives the <strong>area</strong> of region R. With f(x,y) &gt; 0, the integral gives the <strong>volume</strong> under the surface above R.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -74,56 +99,152 @@
         <form id="pretestForm" class="quiz-form">
           <div class="question-card">
             <div class="question-num">Q1</div>
-            <p class="question-text">A double integral of f(x,y) over a region represents:</p>
+            <p class="question-text">What does a double integral &int;&int;<sub>R</sub> f(x,y) dA represent geometrically?</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="pre1" value="0" required /><span>Derivative with respect to y only</span></label>
-              <label class="option-card"><input type="radio" name="pre1" value="1" /><span>Accumulation over a region (e.g., area/volume interpretation)</span></label>
-              <label class="option-card"><input type="radio" name="pre1" value="0" /><span>Slope of a curve</span></label>
+              <label class="option-card"><input type="radio" name="pre1" value="0" /><span>Slope of the surface z = f(x,y)</span></label>
+              <label class="option-card"><input type="radio" name="pre1" value="1" /><span>Volume under the surface z = f(x,y) above region R</span></label>
+              <label class="option-card"><input type="radio" name="pre1" value="0" /><span>Length of the curve f(x,y) = 0</span></label>
+              <label class="option-card"><input type="radio" name="pre1" value="0" /><span>Gradient of f(x,y) over R</span></label>
             </div>
           </div>
           <div class="question-card">
             <div class="question-num">Q2</div>
-            <p class="question-text">The Jacobian factor in polar coordinates is:</p>
+            <p class="question-text">The notation &int;&int;<sub>R</sub> f(x,y) dA indicates integration over how many variables?</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="pre2" value="0" required /><span>1/r</span></label>
-              <label class="option-card"><input type="radio" name="pre2" value="1" /><span>r</span></label>
-              <label class="option-card"><input type="radio" name="pre2" value="0" /><span>r²</span></label>
+              <label class="option-card"><input type="radio" name="pre2" value="0" /><span>One variable</span></label>
+              <label class="option-card"><input type="radio" name="pre2" value="1" /><span>Two variables</span></label>
+              <label class="option-card"><input type="radio" name="pre2" value="0" /><span>Three variables</span></label>
+              <label class="option-card"><input type="radio" name="pre2" value="0" /><span>Four variables</span></label>
             </div>
           </div>
           <div class="question-card">
             <div class="question-num">Q3</div>
-            <p class="question-text">When converting ∬ f(x,y) dA to polar form, the area element dA becomes:</p>
+            <p class="question-text">In Cartesian coordinates, the area element dA in a double integral is:</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="pre3" value="0" required /><span>dr dθ</span></label>
-              <label class="option-card"><input type="radio" name="pre3" value="1" /><span>r dr dθ</span></label>
-              <label class="option-card"><input type="radio" name="pre3" value="0" /><span>r² dr dθ</span></label>
+              <label class="option-card"><input type="radio" name="pre3" value="0" /><span>dx + dy</span></label>
+              <label class="option-card"><input type="radio" name="pre3" value="1" /><span>dx dy</span></label>
+              <label class="option-card"><input type="radio" name="pre3" value="0" /><span>dx / dy</span></label>
+              <label class="option-card"><input type="radio" name="pre3" value="0" /><span>x &middot; y</span></label>
             </div>
           </div>
           <div class="question-card">
             <div class="question-num">Q4</div>
-            <p class="question-text">The area of a planar region R can be found using:</p>
+            <p class="question-text">A double integral can be considered an extension of which concept?</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="pre4" value="1" required /><span>∬<sub>R</sub> 1 dA</span></label>
-              <label class="option-card"><input type="radio" name="pre4" value="0" /><span>∫ 1 dx only</span></label>
-              <label class="option-card"><input type="radio" name="pre4" value="0" /><span>∭ 1 dV for any region</span></label>
+              <label class="option-card"><input type="radio" name="pre4" value="0" /><span>Differentiation</span></label>
+              <label class="option-card"><input type="radio" name="pre4" value="0" /><span>Triple integration</span></label>
+              <label class="option-card"><input type="radio" name="pre4" value="1" /><span>Single-variable integration</span></label>
+              <label class="option-card"><input type="radio" name="pre4" value="0" /><span>Matrix multiplication</span></label>
             </div>
           </div>
           <div class="question-card">
             <div class="question-num">Q5</div>
-            <p class="question-text">Triple integration in Cartesian coordinates is written as:</p>
+            <p class="question-text">Double integrals are evaluated over which type of domain?</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="pre5" value="1" required /><span>∫∫∫ f(x,y,z) dV</span></label>
-              <label class="option-card"><input type="radio" name="pre5" value="0" /><span>∫ f(x) dx</span></label>
-              <label class="option-card"><input type="radio" name="pre5" value="0" /><span>Σ f(i,j,k)</span></label>
+              <label class="option-card"><input type="radio" name="pre5" value="0" /><span>A single point</span></label>
+              <label class="option-card"><input type="radio" name="pre5" value="0" /><span>A curve in space</span></label>
+              <label class="option-card"><input type="radio" name="pre5" value="1" /><span>A planar region R</span></label>
+              <label class="option-card"><input type="radio" name="pre5" value="0" /><span>A solid 3D region</span></label>
             </div>
           </div>
           <div class="question-card">
             <div class="question-num">Q6</div>
-            <p class="question-text">The volume of a solid region V can be found using:</p>
+            <p class="question-text">The area of a planar region R can be computed using which double integral?</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="pre6" value="1" required /><span>∭<sub>V</sub> 1 dV</span></label>
-              <label class="option-card"><input type="radio" name="pre6" value="0" /><span>∬<sub>R</sub> 1 dA only</span></label>
-              <label class="option-card"><input type="radio" name="pre6" value="0" /><span>∫ 1 dz only</span></label>
+              <label class="option-card"><input type="radio" name="pre6" value="0" /><span>&int;&int;<sub>R</sub> f(x,y) dA</span></label>
+              <label class="option-card"><input type="radio" name="pre6" value="1" /><span>&int;&int;<sub>R</sub> 1 dA</span></label>
+              <label class="option-card"><input type="radio" name="pre6" value="0" /><span>&int; x dx</span></label>
+              <label class="option-card"><input type="radio" name="pre6" value="0" /><span>&int;&int;&int; 1 dV</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q7</div>
+            <p class="question-text">Fubini's theorem states that a double integral over a rectangle can be evaluated as:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre7" value="0" /><span>A single integral only</span></label>
+              <label class="option-card"><input type="radio" name="pre7" value="1" /><span>An iterated integral in either order (dy dx or dx dy)</span></label>
+              <label class="option-card"><input type="radio" name="pre7" value="0" /><span>A product of two gradients</span></label>
+              <label class="option-card"><input type="radio" name="pre7" value="0" /><span>A triple integral</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q8</div>
+            <p class="question-text">In polar coordinates, x and y are expressed as:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre8" value="0" /><span>x = r sin&theta;, y = r cos&theta;</span></label>
+              <label class="option-card"><input type="radio" name="pre8" value="1" /><span>x = r cos&theta;, y = r sin&theta;</span></label>
+              <label class="option-card"><input type="radio" name="pre8" value="0" /><span>x = &theta; cosr, y = &theta; sinr</span></label>
+              <label class="option-card"><input type="radio" name="pre8" value="0" /><span>x = r, y = &theta;</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q9</div>
+            <p class="question-text">When converting a double integral to polar form, the area element dA becomes:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre9" value="0" /><span>dr d&theta;</span></label>
+              <label class="option-card"><input type="radio" name="pre9" value="0" /><span>r&sup2; dr d&theta;</span></label>
+              <label class="option-card"><input type="radio" name="pre9" value="1" /><span>r dr d&theta;</span></label>
+              <label class="option-card"><input type="radio" name="pre9" value="0" /><span>d&theta; / dr</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q10</div>
+            <p class="question-text">The Jacobian factor r in polar coordinates arises from:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre10" value="0" /><span>Gradient of polar fields</span></label>
+              <label class="option-card"><input type="radio" name="pre10" value="0" /><span>Taylor series expansion</span></label>
+              <label class="option-card"><input type="radio" name="pre10" value="1" /><span>The Jacobian determinant of the coordinate transformation</span></label>
+              <label class="option-card"><input type="radio" name="pre10" value="0" /><span>L'H&ocirc;pital's rule</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q11</div>
+            <p class="question-text">Polar coordinates are most suitable for evaluating double integrals over which regions?</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre11" value="0" /><span>Triangular regions</span></label>
+              <label class="option-card"><input type="radio" name="pre11" value="0" /><span>Rectangular regions</span></label>
+              <label class="option-card"><input type="radio" name="pre11" value="1" /><span>Circular or annular regions</span></label>
+              <label class="option-card"><input type="radio" name="pre11" value="0" /><span>Parabolic regions</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q12</div>
+            <p class="question-text">In an iterated integral &int;<sub>a</sub><sup>b</sup>&int;<sub>c</sub><sup>d</sup> f(x,y) dy dx, which integration is performed first?</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre12" value="0" /><span>Integration with respect to x</span></label>
+              <label class="option-card"><input type="radio" name="pre12" value="1" /><span>Integration with respect to y (the inner integral)</span></label>
+              <label class="option-card"><input type="radio" name="pre12" value="0" /><span>Both simultaneously</span></label>
+              <label class="option-card"><input type="radio" name="pre12" value="0" /><span>The outer integral first</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q13</div>
+            <p class="question-text">If f(x,y) = g(x)&middot;h(y) and the region is a rectangle, the double integral equals:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre13" value="0" /><span>&int;g(x) dx + &int;h(y) dy</span></label>
+              <label class="option-card"><input type="radio" name="pre13" value="1" /><span>[&int;g(x) dx] &times; [&int;h(y) dy]</span></label>
+              <label class="option-card"><input type="radio" name="pre13" value="0" /><span>&int;g(x)&middot;h(y) dx</span></label>
+              <label class="option-card"><input type="radio" name="pre13" value="0" /><span>g(x) / h(y)</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q14</div>
+            <p class="question-text">Which theorem allows switching the order of integration in a double integral?</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre14" value="0" /><span>Green's theorem</span></label>
+              <label class="option-card"><input type="radio" name="pre14" value="0" /><span>Stokes' theorem</span></label>
+              <label class="option-card"><input type="radio" name="pre14" value="1" /><span>Fubini's theorem</span></label>
+              <label class="option-card"><input type="radio" name="pre14" value="0" /><span>Rolle's theorem</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q15</div>
+            <p class="question-text">A double integral is primarily used to compute which of the following?</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="pre15" value="0" /><span>Length of a space curve</span></label>
+              <label class="option-card"><input type="radio" name="pre15" value="0" /><span>Directional derivative of a function</span></label>
+              <label class="option-card"><input type="radio" name="pre15" value="0" /><span>Eigenvalues of a matrix</span></label>
+              <label class="option-card"><input type="radio" name="pre15" value="1" /><span>Area of a planar region or volume under a surface</span></label>
             </div>
           </div>
           <div class="quiz-actions"><button type="submit" class="btn btn-primary">Submit Pretest</button></div>
@@ -193,89 +314,143 @@
 
       <!-- SIMULATION -->
       <section class="tab-panel" id="solverTab">
-        <h2 class="section-title">Simulation</h2>
-        <p class="section-desc">Numerically compute integrals using midpoint Riemann sums with interactive 3D visualization.</p>
-        <div class="sim-layout">
-          <div class="sim-controls">
-            <div>
-              <p class="control-group-title">Configuration</p>
-              <div class="control-row" style="margin-bottom:10px;">
-                <div class="form-field">
-                  <label for="mode">Integral Type</label>
-                  <select id="mode">
-                    <option value="double">Double Integral</option>
-                    <!-- <option value="triple">Triple Integral</option> -->
+
+        <!-- Page header -->
+        <div class="sim-page-head">
+          <h2 class="sim-page-title">Simulation Environment</h2>
+          <p class="sim-page-sub">Configure your double integral parameters and visualize the bounding region in 3D space.</p>
+        </div>
+
+        <!-- Top row: controls left, Desmos 3D right -->
+        <div class="sim-top-row">
+
+          <!-- LEFT: System Configuration card -->
+          <div class="sim-config-card">
+            <div class="sim-config-head">
+              <span class="sim-config-icon">⚙</span>
+              <span>System Configuration</span>
+            </div>
+
+            <div class="sim-config-body">
+
+              <!-- Integral type + coord system -->
+              <div class="sc-group">
+                <p class="sc-label">Configuration</p>
+                <div class="control-row" style="margin-bottom:10px;">
+                  <div class="form-field">
+                    <label for="mode">Integral Type</label>
+                    <select id="mode">
+                      <option value="double">Double Integral</option>
+                    </select>
+                  </div>
+                  <div class="form-field">
+                    <label for="coordSystem">Coordinate System</label>
+                    <select id="coordSystem"></select>
+                  </div>
+                </div>
+                <div class="form-field" id="doubleCaseWrap">
+                  <label for="doubleCase">Region Setup</label>
+                  <select id="doubleCase">
+                    <option value="case1">y-limits depend on x</option>
+                    <option value="case2">x-limits depend on y</option>
+                    <option value="case3">Rectangular (constant limits)</option>
+                    <option value="case4">Rectangular (separable f)</option>
                   </select>
                 </div>
+              </div>
+
+              <!-- Integrand -->
+              <div class="sc-group">
+                <p class="sc-label">Integrand Function</p>
                 <div class="form-field">
-                  <label for="coordSystem">Coordinate System</label>
-                  <select id="coordSystem"></select>
+                  <input id="funcInput" type="text" value="x*y" placeholder="e.g. x*y or x^2 + y^2" />
                 </div>
               </div>
-              <div class="form-field" id="doubleCaseWrap">
-                <label for="doubleCase">Region Setup</label>
-                <select id="doubleCase">
-                  <option value="case1">y-limits depend on x</option>
-                  <option value="case2">x-limits depend on y</option>
-                  <option value="case3">Rectangular (constant limits)</option>
-                  <option value="case4">Rectangular (separable f)</option>
-                </select>
-              </div>
-            </div>
 
-            <div>
-              <p class="control-group-title">Function</p>
-              <div class="form-field">
-                <label for="funcInput">f expression</label>
-                <input id="funcInput" type="text" value="x*y" />
-              </div>
-            </div>
+              <!-- Limits -->
+              <div class="sc-group">
+                <p class="sc-label">Integration Limits</p>
 
-            <div>
-              <p class="control-group-title">Limits</p>
-              <div class="limits-grid">
-                <div class="form-field" id="xMinWrap"><label for="xMin">x min</label><input id="xMin" type="number" step="any" value="0" /></div>
-                <div class="form-field" id="xMaxWrap"><label for="xMax">x max</label><input id="xMax" type="number" step="any" value="1" /></div>
-                <div class="form-field" id="yMinWrap"><label for="yMin">y min</label><input id="yMin" type="number" step="any" value="0" /></div>
-                <div class="form-field" id="yMaxWrap"><label for="yMax">y max</label><input id="yMax" type="number" step="any" value="1" /></div>
-                <div class="form-field hidden" id="zMinWrap"><label for="zMin">z min</label><input id="zMin" type="number" step="any" value="0" /></div>
-                <div class="form-field hidden" id="zMaxWrap"><label for="zMax">z max</label><input id="zMax" type="number" step="any" value="1" /></div>
-                <div class="form-field hidden" id="innerLowerWrap" style="grid-column:1/-1"><label for="innerLower">Inner lower limit</label><input id="innerLower" type="text" value="0" /></div>
-                <div class="form-field hidden" id="innerUpperWrap" style="grid-column:1/-1"><label for="innerUpper">Inner upper limit</label><input id="innerUpper" type="text" value="x" /></div>
-              </div>
-            </div>
+                <div class="sc-limit-row" id="xMinWrap">
+                  <span class="sc-limit-label">Outer (dx)</span>
+                  <input id="xMin" type="number" step="any" value="0" />
+                  <span class="sc-limit-to">to</span>
+                  <input id="xMax" type="number" step="any" value="1" />
+                </div>
 
-            <div class="sim-actions">
-              <button id="solveBtn" class="btn btn-primary">Compute</button>
-              <button id="exampleBtn" type="button" class="btn btn-ghost btn-sm">Load Example</button>
-              <button id="resetBtn"   type="button" class="btn btn-ghost btn-sm">Reset</button>
-            </div>
+                <div class="sc-limit-row" id="yMinWrap">
+                  <span class="sc-limit-label">Inner (dy)</span>
+                  <input id="yMin" type="number" step="any" value="0" />
+                  <span class="sc-limit-to">to</span>
+                  <input id="yMax" type="number" step="any" value="1" />
+                </div>
+
+                <div class="sc-limit-row hidden" id="zMinWrap">
+                  <span class="sc-limit-label">z</span>
+                  <input id="zMin" type="number" step="any" value="0" />
+                  <span class="sc-limit-to">to</span>
+                  <input id="zMax" type="number" step="any" value="1" />
+                </div>
+
+                <div class="sc-limit-col hidden" id="innerLowerWrap">
+                  <span class="sc-limit-label">Inner lower limit</span>
+                  <input id="innerLower" type="text" value="0" />
+                </div>
+                <div class="sc-limit-col hidden" id="innerUpperWrap">
+                  <span class="sc-limit-label">Inner upper limit</span>
+                  <input id="innerUpper" type="text" value="x" />
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="sc-actions">
+                <button id="solveBtn" class="btn-compute">Compute Integral</button>
+                <div class="sc-actions-sub">
+                  <button id="exampleBtn" type="button" class="btn-example">⊕ Load Example</button>
+                  <button id="resetBtn"   type="button" class="btn-reset">↺ Reset</button>
+                </div>
+              </div>
+
+            </div><!-- /sim-config-body -->
+          </div><!-- /sim-config-card -->
+
+          <!-- RIGHT: Desmos 3D fills full height -->
+          <div class="sim-3d-panel">
+            <div id="desmosStatus" class="sim-3d-placeholder">Graph will appear after computation.</div>
+            <div id="desmosDiv"></div>
           </div>
 
-          <div class="sim-output">
-            <div class="result-card">
-              <h3>Result</h3>
-              <div class="result-value" id="integralResult">Ready</div>
-              <div id="integralSymbolic" style="display:none;margin-top:6px;">
-                <div class="result-symbolic"><span class="sym-label">≈</span><span id="integralSymVal"></span></div>
-              </div>
-              <div class="result-meta" id="integralMeta">Configure the integral and click Compute.</div>
-              <div class="result-tip">Tip: Use <code>r</code>, <code>theta</code> for polar · <code>x</code>, <code>y</code>, <code>z</code> for Cartesian.</div>
+        </div><!-- /sim-top-row -->
+
+        <!-- Bottom row: Result + Steps + Plotly -->
+        <div class="sim-bottom-row">
+          <div class="result-card">
+            <h3>Result</h3>
+            <div class="result-value" id="integralResult">Ready</div>
+            <div id="integralSymbolic" style="display:none;margin-top:6px;">
+              <div class="result-symbolic"><span class="sym-label">≈</span><span id="integralSymVal"></span></div>
             </div>
-            <div class="steps-card" id="stepsCard" style="display:none;">
-              <div class="steps-card-head" id="stepsToggle">
-                Calculation Steps <span class="toggle-icon">▼</span>
-              </div>
-              <div class="steps-body" id="stepsContent"></div>
-            </div>
-            <div class="viz-card">
-              <div class="viz-card-head">3D Visualization</div>
-              <div id="vizStatus">Graph will appear after computation.</div>
-              <div id="viz3d" aria-label="3D integration graph"></div>
-            </div>
+            <div class="result-meta" id="integralMeta">Configure the integral and click Compute.</div>
+            <div class="result-tip">Tip: Use <code>r</code>, <code>theta</code> for polar · <code>x</code>, <code>y</code> for Cartesian.</div>
           </div>
-        </div>
+
+          <div class="steps-card" id="stepsCard" style="display:none;">
+            <div class="steps-card-head" id="stepsToggle">
+              <span>⟨fx⟩ Step-by-Step Evaluation</span>
+              <span class="toggle-icon">▼</span>
+            </div>
+            <div class="steps-body" id="stepsContent"></div>
+          </div>
+
+          <div class="viz-card">
+            <div class="viz-card-head">Surface Plot (Plotly)</div>
+            <div id="vizStatus">Graph will appear after computation.</div>
+            <div id="viz3d" aria-label="3D integration graph"></div>
+          </div>
+        </div><!-- /sim-bottom-row -->
+
       </section>
+
 
       <!-- POSTTEST -->
       <section class="tab-panel" id="posttestTab">
@@ -286,47 +461,152 @@
         <form id="posttestForm" class="quiz-form">
           <div class="question-card">
             <div class="question-num">Q1</div>
-            <p class="question-text">Evaluate ∬(x + y) dA over x:[0,1], y:[0,1].</p>
+            <p class="question-text">Changing the order of integration in a double integral has what effect?</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="post1" value="0" required /><span>0.5</span></label>
-              <label class="option-card"><input type="radio" name="post1" value="1" /><span>1</span></label>
-              <label class="option-card"><input type="radio" name="post1" value="0" /><span>2</span></label>
+              <label class="option-card"><input type="radio" name="post1" value="0" /><span>It always changes the value</span></label>
+              <label class="option-card"><input type="radio" name="post1" value="1" /><span>No effect on the value if the limits are set correctly</span></label>
+              <label class="option-card"><input type="radio" name="post1" value="0" /><span>It makes the integral zero</span></label>
+              <label class="option-card"><input type="radio" name="post1" value="0" /><span>It makes the integral undefined</span></label>
             </div>
           </div>
           <div class="question-card">
             <div class="question-num">Q2</div>
-            <p class="question-text">In polar conversion, which substitution is correct?</p>
+            <p class="question-text">Evaluate &int;&int;<sub>R</sub> (x + y) dA over the rectangle x&isin;[0,1], y&isin;[0,1].</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="post2" value="1" required /><span>x = r cosθ, y = r sinθ</span></label>
-              <label class="option-card"><input type="radio" name="post2" value="0" /><span>x = r sinθ, y = r cosθ</span></label>
-              <label class="option-card"><input type="radio" name="post2" value="0" /><span>x = θ cosr, y = θ sinr</span></label>
+              <label class="option-card"><input type="radio" name="post2" value="0" /><span>0.5</span></label>
+              <label class="option-card"><input type="radio" name="post2" value="1" /><span>1</span></label>
+              <label class="option-card"><input type="radio" name="post2" value="0" /><span>2</span></label>
+              <label class="option-card"><input type="radio" name="post2" value="0" /><span>0.25</span></label>
             </div>
           </div>
           <div class="question-card">
             <div class="question-num">Q3</div>
-            <p class="question-text">If f(x,y,z)=1 over the unit cube [0,1]³, then ∭f dV equals:</p>
+            <p class="question-text">In polar coordinates, the correct volume element dA for a double integral is:</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="post3" value="0" required /><span>0</span></label>
-              <label class="option-card"><input type="radio" name="post3" value="1" /><span>1</span></label>
-              <label class="option-card"><input type="radio" name="post3" value="0" /><span>3</span></label>
+              <label class="option-card"><input type="radio" name="post3" value="0" /><span>dr d&theta;</span></label>
+              <label class="option-card"><input type="radio" name="post3" value="1" /><span>r dr d&theta;</span></label>
+              <label class="option-card"><input type="radio" name="post3" value="0" /><span>r&sup2; dr d&theta;</span></label>
+              <label class="option-card"><input type="radio" name="post3" value="0" /><span>d&theta; dr / r</span></label>
             </div>
           </div>
           <div class="question-card">
             <div class="question-num">Q4</div>
-            <p class="question-text">The area of a region R in the plane is computed by:</p>
+            <p class="question-text">The area of a disk of radius a using a double integral in polar form equals:</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="post4" value="1" required /><span>∬<sub>R</sub> 1 dA</span></label>
-              <label class="option-card"><input type="radio" name="post4" value="0" /><span>∭<sub>V</sub> 1 dV</span></label>
-              <label class="option-card"><input type="radio" name="post4" value="0" /><span>∫ 1 dx only</span></label>
+              <label class="option-card"><input type="radio" name="post4" value="0" /><span>2&pi;a</span></label>
+              <label class="option-card"><input type="radio" name="post4" value="0" /><span>(4/3)&pi;a&sup3;</span></label>
+              <label class="option-card"><input type="radio" name="post4" value="1" /><span>&pi;a&sup2;</span></label>
+              <label class="option-card"><input type="radio" name="post4" value="0" /><span>2&pi;a&sup2;</span></label>
             </div>
           </div>
           <div class="question-card">
             <div class="question-num">Q5</div>
-            <p class="question-text">The volume of a solid region V is computed by:</p>
+            <p class="question-text">Polar coordinates are best suited for double integrals over which region?</p>
             <div class="options">
-              <label class="option-card"><input type="radio" name="post5" value="1" required /><span>∭<sub>V</sub> 1 dV</span></label>
-              <label class="option-card"><input type="radio" name="post5" value="0" /><span>∬<sub>R</sub> 1 dA</span></label>
-              <label class="option-card"><input type="radio" name="post5" value="0" /><span>∫ 1 dz only</span></label>
+              <label class="option-card"><input type="radio" name="post5" value="0" /><span>Triangles</span></label>
+              <label class="option-card"><input type="radio" name="post5" value="1" /><span>Circles and annuli</span></label>
+              <label class="option-card"><input type="radio" name="post5" value="0" /><span>Squares</span></label>
+              <label class="option-card"><input type="radio" name="post5" value="0" /><span>Ellipses in Cartesian form</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q6</div>
+            <p class="question-text">To find the mass of a lamina with variable density &rho;(x,y), which integral is used?</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post6" value="1" /><span>&int;&int;<sub>R</sub> &rho;(x,y) dA</span></label>
+              <label class="option-card"><input type="radio" name="post6" value="0" /><span>&int;&int;<sub>R</sub> 1 dA</span></label>
+              <label class="option-card"><input type="radio" name="post6" value="0" /><span>&int; &rho;(x) dx</span></label>
+              <label class="option-card"><input type="radio" name="post6" value="0" /><span>&int;&int;&int; &rho; dV</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q7</div>
+            <p class="question-text">The key principle behind switching integration order in a double integral relies on:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post7" value="0" /><span>Random approximation</span></label>
+              <label class="option-card"><input type="radio" name="post7" value="1" /><span>Fubini's theorem and continuity of f</span></label>
+              <label class="option-card"><input type="radio" name="post7" value="0" /><span>Numerical methods</span></label>
+              <label class="option-card"><input type="radio" name="post7" value="0" /><span>Differentiation under the integral sign</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q8</div>
+            <p class="question-text">Evaluate &int;<sub>0</sub><sup>1</sup> &int;<sub>0</sub><sup>1</sup> xy dy dx.</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post8" value="0" /><span>1</span></label>
+              <label class="option-card"><input type="radio" name="post8" value="0" /><span>1/2</span></label>
+              <label class="option-card"><input type="radio" name="post8" value="1" /><span>1/4</span></label>
+              <label class="option-card"><input type="radio" name="post8" value="0" /><span>1/8</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q9</div>
+            <p class="question-text">For a double integral over a type-I region (y-limits depend on x), the correct iterated form is:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post9" value="0" /><span>&int;&int; f dy dy</span></label>
+              <label class="option-card"><input type="radio" name="post9" value="1" /><span>&int;<sub>a</sub><sup>b</sup> [&int;<sub>g1(x)</sub><sup>g2(x)</sup> f dy] dx</span></label>
+              <label class="option-card"><input type="radio" name="post9" value="0" /><span>&int;<sub>c</sub><sup>d</sup> [&int;<sub>h1(y)</sub><sup>h2(y)</sup> f dx] dy</span></label>
+              <label class="option-card"><input type="radio" name="post9" value="0" /><span>&int; f(x,y) dx</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q10</div>
+            <p class="question-text">What does &int;&int;<sub>R</sub> 1 dA compute for region R?</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post10" value="0" /><span>Volume of R</span></label>
+              <label class="option-card"><input type="radio" name="post10" value="1" /><span>Area of the region R</span></label>
+              <label class="option-card"><input type="radio" name="post10" value="0" /><span>Perimeter of R</span></label>
+              <label class="option-card"><input type="radio" name="post10" value="0" /><span>Density of R</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q11</div>
+            <p class="question-text">For a separable integrand f(x,y) = g(x)&middot;h(y) on a rectangle [a,b]&times;[c,d], the double integral equals:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post11" value="0" /><span>g(b)&middot;h(d) &minus; g(a)&middot;h(c)</span></label>
+              <label class="option-card"><input type="radio" name="post11" value="1" /><span>[&int;<sub>a</sub><sup>b</sup> g(x) dx] &times; [&int;<sub>c</sub><sup>d</sup> h(y) dy]</span></label>
+              <label class="option-card"><input type="radio" name="post11" value="0" /><span>&int;<sub>a</sub><sup>b</sup> g(x) dx + &int;<sub>c</sub><sup>d</sup> h(y) dy</span></label>
+              <label class="option-card"><input type="radio" name="post11" value="0" /><span>g(x) / h(y)</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q12</div>
+            <p class="question-text">The Jacobian factor r must be included in polar double integrals because:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post12" value="0" /><span>It cancels with d&theta;</span></label>
+              <label class="option-card"><input type="radio" name="post12" value="1" /><span>It accounts for the stretching of area elements in polar coordinates</span></label>
+              <label class="option-card"><input type="radio" name="post12" value="0" /><span>It is needed only for r &gt; 1</span></label>
+              <label class="option-card"><input type="radio" name="post12" value="0" /><span>It is an optional scaling factor</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q13</div>
+            <p class="question-text">Which method is most suitable for evaluating &int;&int;<sub>x&sup2;+y&sup2;&le;4</sub> (x&sup2;+y&sup2;) dA?</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post13" value="0" /><span>Cartesian integration with constant limits</span></label>
+              <label class="option-card"><input type="radio" name="post13" value="1" /><span>Polar coordinate transformation</span></label>
+              <label class="option-card"><input type="radio" name="post13" value="0" /><span>Single-variable integration</span></label>
+              <label class="option-card"><input type="radio" name="post13" value="0" /><span>Numerical differentiation</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q14</div>
+            <p class="question-text">Double integration is particularly useful for finding which quantity for a 2D lamina?</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post14" value="0" /><span>Velocity at a point</span></label>
+              <label class="option-card"><input type="radio" name="post14" value="1" /><span>Mass, area, and centre of mass</span></label>
+              <label class="option-card"><input type="radio" name="post14" value="0" /><span>Electric field intensity</span></label>
+              <label class="option-card"><input type="radio" name="post14" value="0" /><span>Gradient vector field</span></label>
+            </div>
+          </div>
+          <div class="question-card">
+            <div class="question-num">Q15</div>
+            <p class="question-text">The area of the quarter-disk of radius a in the first quadrant, using polar integration, equals:</p>
+            <div class="options">
+              <label class="option-card"><input type="radio" name="post15" value="0" /><span>&pi;a</span></label>
+              <label class="option-card"><input type="radio" name="post15" value="0" /><span>a&sup2;</span></label>
+              <label class="option-card"><input type="radio" name="post15" value="1" /><span>&pi;a&sup2; / 4</span></label>
+              <label class="option-card"><input type="radio" name="post15" value="0" /><span>2&pi;a&sup2;</span></label>
             </div>
           </div>
           <div class="quiz-actions"><button type="submit" class="btn btn-primary">Submit Posttest</button></div>
@@ -447,6 +727,7 @@
 <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Algebra.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Calculus.js"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=856ba2dd9f4d48eebdca1f6846f85776"></script>
 <script src="script.js"></script>
 </body>
 </html>
