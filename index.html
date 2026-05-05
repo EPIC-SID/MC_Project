@@ -422,8 +422,8 @@
 
         </div><!-- /sim-top-row -->
 
-        <!-- Bottom row: Result + Steps + Plotly -->
-        <div class="sim-bottom-row">
+        <!-- Bottom row: Result + Steps (hidden until Compute) -->
+        <div class="sim-bottom-row" id="simBottomRow" style="display:none;">
           <div class="result-card">
             <h3>Result</h3>
             <div class="result-value" id="integralResult">Ready</div>
@@ -440,12 +440,6 @@
               <span class="toggle-icon">▼</span>
             </div>
             <div class="steps-body" id="stepsContent"></div>
-          </div>
-
-          <div class="viz-card">
-            <div class="viz-card-head">Surface Plot (Plotly)</div>
-            <div id="vizStatus">Graph will appear after computation.</div>
-            <div id="viz3d" aria-label="3D integration graph"></div>
           </div>
         </div><!-- /sim-bottom-row -->
 
@@ -722,7 +716,6 @@
   </main>
 </div>
 
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/nerdamer.core.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Algebra.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Calculus.js"></script>

@@ -590,25 +590,10 @@ function retryQuiz(formId, outputId) {
   el.style.cssText = '';
 }
 
-function setVizStatus(message) {
-  const statusEl = document.getElementById("vizStatus");
-  const vizEl    = document.getElementById("viz3d");
-  if (message) {
-    statusEl.textContent = message;
-    statusEl.style.display = 'block';
-    vizEl.style.display    = 'none';
-  } else {
-    statusEl.style.display = 'none';
-    vizEl.style.display    = 'block';
-  }
-}
-
 function clearVisualization(message) {
-  const viz = document.getElementById("viz3d");
-  if (window.Plotly) { window.Plotly.purge(viz); }
-  setVizStatus(message || "Graph unavailable for this selection.");
   clearDesmos();
 }
+
 
 /* ── Desmos 3D Visualization ─────────────────────── */
 let desmosCalc = null;
@@ -1378,14 +1363,16 @@ document.getElementById("solveBtn").addEventListener("click", () => {
     }
     */
     if (vizContext) {
-      if (vizContext.mode === "double") {
-        renderDoubleVisualization(vizContext);
-        renderDesmosRegion(vizContext);
-      } else {
-        renderTripleVisualization(vizContext);
-      }
+      renderDesmosRegion(vizContext);
     }
+    // Reveal the results panel
+    document.getElementById('simBottomRow').style.display = 'flex';
+    document.getElementById('simBottomRow').style.flexDirection = 'column';
+    document.getElementById('simBottomRow').style.gap = '16px';
   } catch (error) {
+    document.getElementById('simBottomRow').style.display = 'flex';
+    document.getElementById('simBottomRow').style.flexDirection = 'column';
+    document.getElementById('simBottomRow').style.gap = '16px';
     document.getElementById('integralResult').innerHTML = '⚠️ Computation failed';
     document.getElementById('integralMeta').textContent = error.message;
     document.getElementById('integralSymbolic').style.display = 'none';
@@ -1465,8 +1452,13 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   document.getElementById("innerUpper").value = "x";
   updateModeUI();
   document.getElementById("integralResult").textContent = "Ready";
-  document.getElementById("integralMeta").textContent = "For Cases 1 and 2, enter inner limits as expressions in the outer variable.";
+  document.getElementById("integralMeta").textContent = "Configure the integral and click Compute.";
+  document.getElementById("integralSymbolic").style.display = "none";
+  document.getElementById("stepsCard").style.display = "none";
+  document.getElementById("simBottomRow").style.display = "none";
+  clearDesmos();
 });
+
 
 document.getElementById("pretestForm").addEventListener("submit", (event) => {
   event.preventDefault();
