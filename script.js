@@ -645,13 +645,15 @@ function jsToDesmos(expr) {
 }
 
 function renderDesmosRegion(modeInfo) {
-  if (!desmosCalc) return;
-  desmosCalc.setBlank();
-
   const el = document.getElementById('desmosDiv');
   const st = document.getElementById('desmosStatus');
   if (el) el.style.display = 'block';
   if (st) st.style.display = 'none';
+
+  if (!desmosCalc) initDesmos();
+  if (!desmosCalc) return;
+
+  desmosCalc.setBlank();
 
   const BLU = '#0078d4', GRN = '#1a9e6a', GRY = '#a0aec0';
   const { a, b, coordSystem, doubleCase, expr } = modeInfo;
@@ -1479,8 +1481,6 @@ document.getElementById("feedbackForm").addEventListener("submit", (event) => {
 
 updateModeUI();
 switchTab("aimTab");
-clearVisualization("Graph will appear after computation.");
-initDesmos();
 
 document.getElementById('stepsToggle').addEventListener('click', () => {
   const head    = document.getElementById('stepsToggle');
