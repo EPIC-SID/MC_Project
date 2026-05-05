@@ -1384,6 +1384,39 @@ document.getElementById("resetBtn").addEventListener("click", () => {
 });
 
 
+function scoreForm(formId, resultId) {
+  const form = document.getElementById(formId);
+  const resultDiv = document.getElementById(resultId);
+  if (!form || !resultDiv) return;
+
+  const questionCards = form.querySelectorAll('.question-card');
+  const total = questionCards.length;
+  let score = 0;
+
+  questionCards.forEach((card) => {
+    const selected = card.querySelector('input[type="radio"]:checked');
+    if (selected && selected.value === "1") {
+      score++;
+    }
+  });
+
+  resultDiv.classList.remove('hidden');
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = `
+    <div style="padding: 1rem; border-radius: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--card-border);">
+      <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">
+        Your Score: <span style="color: var(--accent-primary);">${score} / ${total}</span>
+      </p>
+      <p style="font-size: 0.9rem; opacity: 0.8;">
+        ${score === total ? "Excellent! You have a perfect understanding of the concepts. 🌟" : 
+          score >= total * 0.7 ? "Great job! You've mastered most of the material. 👏" : 
+          score >= total * 0.5 ? "Good effort! A bit more review will make you an expert. 👍" : 
+          "Keep practicing! Review the theory and simulation to improve your score. 💪"}
+      </p>
+    </div>
+  `;
+}
+
 document.getElementById("pretestForm").addEventListener("submit", (event) => {
   event.preventDefault();
   scoreForm("pretestForm", "pretestResult");
@@ -1396,8 +1429,11 @@ document.getElementById("posttestForm").addEventListener("submit", (event) => {
 
 document.getElementById("feedbackForm").addEventListener("submit", (event) => {
   event.preventDefault();
-  document.getElementById("feedbackResult").textContent =
-    "✅ Thank you for your feedback! Your response has been recorded.";
+  document.getElementById("feedbackResult").innerHTML = `
+    <div style="margin-top: 1rem; padding: 1rem; border-radius: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981;">
+      ✅ <strong>Success!</strong> Thank you for your feedback. Your response has been recorded.
+    </div>
+  `;
   event.target.reset();
 });
 
