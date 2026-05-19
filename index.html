@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
 <div class="app-shell">
@@ -341,6 +341,7 @@
                     <label for="mode">Integral Type</label>
                     <select id="mode">
                       <option value="double">Double Integral</option>
+                      <option value="triple">Triple Integral</option>
                     </select>
                   </div>
                   <div class="form-field">
@@ -373,23 +374,23 @@
 
                 <div class="sc-limit-row" id="xMinWrap">
                   <span class="sc-limit-label">Outer (dx)</span>
-                  <input id="xMin" type="number" step="any" value="0" />
+                  <input id="xMin" type="text" value="0" />
                   <span class="sc-limit-to">to</span>
-                  <input id="xMax" type="number" step="any" value="1" />
+                  <input id="xMax" type="text" value="1" />
                 </div>
 
                 <div class="sc-limit-row" id="yMinWrap">
                   <span class="sc-limit-label">Inner (dy)</span>
-                  <input id="yMin" type="number" step="any" value="0" />
+                  <input id="yMin" type="text" step="any" value="0" />
                   <span class="sc-limit-to">to</span>
-                  <input id="yMax" type="number" step="any" value="1" />
+                  <input id="yMax" type="text" step="any" value="1" />
                 </div>
 
                 <div class="sc-limit-row hidden" id="zMinWrap">
                   <span class="sc-limit-label">z</span>
-                  <input id="zMin" type="number" step="any" value="0" />
+                  <input id="zMin" type="text" step="any" value="0" />
                   <span class="sc-limit-to">to</span>
-                  <input id="zMax" type="number" step="any" value="1" />
+                  <input id="zMax" type="text" step="any" value="1" />
                 </div>
 
                 <div class="sc-limit-col hidden" id="innerLowerWrap">
@@ -409,6 +410,7 @@
                   <button id="exampleBtn" type="button" class="btn-example">⊕ Load Example</button>
                   <button id="resetBtn"   type="button" class="btn-reset">↺ Reset</button>
                 </div>
+                <div id="exampleHint" style="display:none;margin-top:10px;padding:8px 10px;background:var(--accent-alpha,rgba(99,102,241,.12));border-left:3px solid var(--accent);border-radius:6px;font-size:11.5px;color:var(--text2);line-height:1.5;"></div>
               </div>
 
             </div><!-- /sim-config-body -->
@@ -745,6 +747,6 @@
 <script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/Calculus.js"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=856ba2dd9f4d48eebdca1f6846f85776"></script>
-<script src="script.js?v=3"></script>
+<script src="script.js?v=6"></script>
 </body>
 </html>

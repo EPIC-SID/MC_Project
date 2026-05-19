@@ -350,47 +350,241 @@ ${_resultBlock(val, exactTeX)}`,
 
 
 /* ── Build steps HTML for triple integral ──────── */
-function buildStepsTriple(expr, coordSystem, a, b, c, d, e, f, N, val) {
-  const dx = (b-a)/N, dy = (d-c)/N, dz = (f-e)/N;
+function buildStepsTriple(expr, coordSystem, a, b, cExpr, dExpr, eExpr, fExpr, N, val) {
   const recognized = recognizeConstant(val);
-  const axes = { cartesian3d:['x','y','z'], cylindrical:['r','θ','z'], spherical:['ρ','φ','θ'] };
-  const [a1,a2,a3] = axes[coordSystem] || ['x','y','z'];
-  const jac = coordSystem==='cylindrical' ? '<em>Jacobian r applied automatically.</em>'
-            : coordSystem==='spherical'   ? '<em>Jacobian ρ²sin(φ) applied automatically.</em>'
-            : '';
-  const html = `
+  const displayVal = recognized ? recognized.val : val;
+  const isExact = !!recognized;
+
+  const axes = { cartesian3d: ['x','y','z'], spherical: ['r','theta','phi'] };
+  const texAxes = { cartesian3d: ['x','y','z'], spherical: ['r','\\theta','\\phi'] };
+  const [v1, v2, v3] = axes[coordSystem] || ['x','y','z'];
+  const [t1, t2, t3] = texAxes[coordSystem] || ['x','y','z'];
+
+  let jacobian = '';
+  let finalExpr = expr;
+  if (coordSystem === 'spherical') {
+    jacobian = 'r^2 * sin(phi)';
+    finalExpr = `(${expr}) * r^2 * sin(phi)`;
+  }
+
+  let step1HTML = '';
+  let step2HTML = '';
+  let step3HTML = '';
+  let step4HTML = '';
+
+  let nerdFailed = false;
+  let doubleExprStr = '';
+  let singleExprStr = '';
+  let finalExactTex = '';
+  let finalExactVal = null;
+
+  try {
+    if (typeof nerdamer === 'undefined') throw new Error('Nerdamer not loaded');
+
+    // --- STEP 1: Inner integration wrt v3 ---
+    const nExpr = toNerd(finalExpr);
+    const exprTex = nerdamer(nExpr).toTeX();
+    const v3HiTex = nerdamer(toNerd(fExpr)).toTeX();
+    const v3LoTex = nerdamer(toNerd(eExpr)).toTeX();
+
+    // Antiderivative wrt v3
+    const ant1_str = nerdamer.integrate(nExpr, v3).toString();
+    const atHi1_str = nSub(ant1_str, v3, fExpr);
+    const atLo1_str = nSub(ant1_str, v3, eExpr);
+    if (!atHi1_str || !atLo1_str) throw new Error('Cannot integrate inner');
+
+    const ant1_tex = nerdamer(ant1_str).toTeX();
+    const atHi1_tex = nerdamer(atHi1_str).toTeX();
+    const atLo1_tex = nerdamer(atLo1_str).toTeX();
+
+    let diff1_str;
+    try {
+      diff1_str = nerdamer(`(${toNerd(atHi1_str)})-(${toNerd(atLo1_str)})`).toString();
+    } catch {
+      diff1_str = `(${atHi1_str}) - (${atLo1_str})`;
+    }
+    doubleExprStr = diff1_str;
+    const diff1_tex = nerdamer(doubleExprStr).toTeX();
+
+    step1HTML = `
+    <div class="step-block">
+      <div class="step-block-title">Step 1 — Inner Integration wrt ${v3}</div>
+      <div class="step-content">
+        <p style="margin-bottom: 8px; font-size: 0.95em; opacity: 0.85;">First, we integrate the integrand ${coordSystem === 'spherical' ? ' (including the spherical Jacobian \\(r^2 \\sin\\phi\\))' : ''} with respect to the innermost variable, <strong>${v3}</strong>, evaluating from <strong>\\(${v3LoTex}\\)</strong> to <strong>\\(${v3HiTex}\\)</strong>:</p>
+        <div class="sym-block">
+          <span class="sym-label">Antiderivative:</span><br>
+          <span class="sym-line">\\( \\int \\left( ${exprTex} \\right) d${t3} = ${ant1_tex} + C \\)</span>
+        </div>
+        <div class="sym-block" style="margin-top: 10px;">
+          <span class="sym-label">Substitute Upper Limit \\(${t3} = ${v3HiTex}\\):</span><br>
+          <span class="sym-line">\\( ${atHi1_tex} \\)</span>
+          <span class="sym-label" style="margin-top: 6px; display:inline-block;">Substitute Lower Limit \\(${t3} = ${v3LoTex}\\):</span><br>
+          <span class="sym-line">\\( ${atLo1_tex} \\)</span>
+          <span class="sym-label" style="margin-top: 6px; display:inline-block;">Result (reduces problem to double integral):</span><br>
+          <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( I_1(${t1}, ${t2}) = ${diff1_tex} \\)</span>
+        </div>
+      </div>
+    </div>`;
+
+    // --- STEP 2: Double integral setup & Middle integration wrt v2 ---
+    const v2HiTex = nerdamer(toNerd(dExpr)).toTeX();
+    const v2LoTex = nerdamer(toNerd(cExpr)).toTeX();
+
+    const ant2_str = nerdamer.integrate(toNerd(doubleExprStr), v2).toString();
+    const atHi2_str = nSub(ant2_str, v2, dExpr);
+    const atLo2_str = nSub(ant2_str, v2, cExpr);
+    if (!atHi2_str || !atLo2_str) throw new Error('Cannot integrate middle');
+
+    const ant2_tex = nerdamer(ant2_str).toTeX();
+    const atHi2_tex = nerdamer(atHi2_str).toTeX();
+    const atLo2_tex = nerdamer(atLo2_str).toTeX();
+
+    let diff2_str;
+    try {
+      diff2_str = nerdamer(`(${toNerd(atHi2_str)})-(${toNerd(atLo2_str)})`).toString();
+    } catch {
+      diff2_str = `(${atHi2_str}) - (${atLo2_str})`;
+    }
+    singleExprStr = diff2_str;
+    const diff2_tex = nerdamer(singleExprStr).toTeX();
+
+    step2HTML = `
+    <div class="step-block">
+      <div class="step-block-title">Step 2 — Reduced Double Integral & Middle Integration wrt ${v2}</div>
+      <div class="step-content">
+        <p style="margin-bottom: 8px; font-size: 0.95em; opacity: 0.85;">The triple integral is now reduced to a <strong>double integral</strong> over the outer coordinates <strong>\\(${t1}\\)</strong> and <strong>\\(${t2}\\)</strong>:</p>
+        <div class="sym-block" style="margin-bottom:12px; text-align: center;">
+          \\( \\iint_R I_1(${t1}, ${t2}) dA = \\int_{${a}}^{${b}} \\int_{${cExpr}}^{${dExpr}} \\left( ${diff1_tex} \\right) d${t2} d${t1} \\)
+        </div>
+        <p style="margin-bottom: 8px; font-size: 0.95em; opacity: 0.85;">Now, integrate with respect to the middle variable, <strong>${v2}</strong>, evaluating from <strong>\\(${v2LoTex}\\)</strong> to <strong>\\(${v2HiTex}\\)</strong>:</p>
+        <div class="sym-block">
+          <span class="sym-label">Antiderivative:</span><br>
+          <span class="sym-line">\\( \\int \\left( ${diff1_tex} \\right) d${t2} = ${ant2_tex} + C \\)</span>
+        </div>
+        <div class="sym-block" style="margin-top: 10px;">
+          <span class="sym-label">Substitute Upper Limit \\(${t2} = ${v2HiTex}\\):</span><br>
+          <span class="sym-line">\\( ${atHi2_tex} \\)</span>
+          <span class="sym-label" style="margin-top: 6px; display:inline-block;">Substitute Lower Limit \\(${t2} = ${v2LoTex}\\):</span><br>
+          <span class="sym-line">\\( ${atLo2_tex} \\)</span>
+          <span class="sym-label" style="margin-top: 6px; display:inline-block;">Result (reduces problem to single integral):</span><br>
+          <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( I_2(${t1}) = ${diff2_tex} \\)</span>
+        </div>
+      </div>
+    </div>`;
+
+    // --- STEP 3: Outer integration wrt v1 ---
+    const ant3_str = nerdamer.integrate(toNerd(singleExprStr), v1).toString();
+    const atHi3_str = nSub(ant3_str, v1, b);
+    const atLo3_str = nSub(ant3_str, v1, a);
+    if (!atHi3_str || !atLo3_str) throw new Error('Cannot integrate outer');
+
+    const ant3_tex = nerdamer(ant3_str).toTeX();
+    const atHi3_tex = nerdamer(atHi3_str).toTeX();
+    const atLo3_tex = nerdamer(atLo3_str).toTeX();
+
+    try {
+      finalExactTex = nerdamer(`(${toNerd(atHi3_str)})-(${toNerd(atLo3_str)})`).toTeX();
+    } catch {
+      finalExactTex = `${atHi3_tex} - \\left(${atLo3_tex}\\right)`;
+    }
+
+    try {
+      const res = nerdamer(`(${toNerd(atHi3_str)})-(${toNerd(atLo3_str)})`).evaluate();
+      finalExactVal = Number(res.text());
+    } catch {}
+
+    step3HTML = `
+    <div class="step-block">
+      <div class="step-block-title">Step 3 — Reduced Single Integral & Outer Integration wrt ${v1}</div>
+      <div class="step-content">
+        <p style="margin-bottom: 8px; font-size: 0.95em; opacity: 0.85;">The double integral is now a simple <strong>single definite integral</strong> over the outermost variable, <strong>${v1}</strong>:</p>
+        <div class="sym-block" style="margin-bottom:12px; text-align: center;">
+          \\( \\int_{${a}}^{${b}} I_2(${t1}) d${t1} = \\int_{${a}}^{${b}} \\left( ${diff2_tex} \\right) d${t1} \\)
+        </div>
+        <p style="margin-bottom: 8px; font-size: 0.95em; opacity: 0.85;">Finally, integrate with respect to the outer variable, <strong>${v1}</strong>, evaluating from <strong>\\(${a}\\)</strong> to <strong>\\(${b}\\)</strong>:</p>
+        <div class="sym-block">
+          <span class="sym-label">Antiderivative:</span><br>
+          <span class="sym-line">\\( \\int \\left( ${diff2_tex} \\right) d${t1} = ${ant3_tex} + C \\)</span>
+        </div>
+        <div class="sym-block" style="margin-top: 10px;">
+          <span class="sym-label">Evaluate at Outer Limits \\([${a}, ${b}]\\):</span><br>
+          <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( \\left[ ${ant3_tex} \\right]_{${a}}^{${b}} = ${finalExactTex} \\)</span>
+        </div>
+      </div>
+    </div>`;
+
+  } catch (err) {
+    nerdFailed = true;
+    console.log('Nerdamer triple integral steps error:', err);
+  }
+
+  // Generate Step 4 (Final Result block)
+  let resultVal = val;
+  let isAnalytical = false;
+  if (!nerdFailed && finalExactVal !== null && isFinite(finalExactVal)) {
+    resultVal = finalExactVal;
+    isAnalytical = true;
+  }
+  const displayConstant = recognizeConstant(resultVal);
+
+  step4HTML = `
   <div class="step-block">
-    <div class="step-block-title">Step 1 — Integral Setup</div>
+    <div class="step-block-title">Step 4 — Final Analytical and Numerical Result</div>
     <div class="step-content">
-      ∭ (${expr}) d${a1}d${a2}d${a3}<br>
-      ${a1}∈[${a},${b}],  ${a2}∈[${c},${d}],  ${a3}∈[${e},${f}]<br>
-      ${jac}
-    </div>
-  </div>
-  <div class="step-block">
-    <div class="step-block-title">Step 2 — Partition  (N = ${N} per axis)</div>
-    <div class="step-content">
-      Δ${a1} = ${dx.toFixed(6)},   Δ${a2} = ${dy.toFixed(6)},   Δ${a3} = ${dz.toFixed(6)}<br>
-      Total cells = ${N}³ = ${N*N*N}
-    </div>
-  </div>
-  <div class="step-block">
-    <div class="step-block-title">Step 3 — Midpoint Rule</div>
-    <div class="step-content">
-      ${a1}ᵢ* = ${a} + (i+0.5)·Δ${a1}<br>
-      ${a2}ⱼ* = ${c} + (j+0.5)·Δ${a2}<br>
-      ${a3}ₖ* = ${e} + (k+0.5)·Δ${a3}<br>
-      Result ≈ Σ f(${a1}ᵢ*,${a2}ⱼ*,${a3}ₖ*) · Δ${a1}·Δ${a2}·Δ${a3}
-    </div>
-  </div>
-  <div class="step-block">
-    <div class="step-block-title">Step 4 — Final Result</div>
-    <div class="step-content">
-      <div class="step-final-val">${recognized ? '=' : '≈'} ${(recognized ? recognized.val : val).toFixed(recognized ? 4 : 8)}</div>
-      ${recognized ? `<div class="step-symbolic-val">= ${recognized.sym}</div>` : '<em>No common symbolic form recognised.</em>'}
+      <div style="margin-bottom: 8px;">
+        <span class="sym-label" style="font-weight: 600; color: var(--primary);">Final Answer:</span><br>
+        ${isAnalytical && finalExactTex ? `<span class="sym-line" style="font-size: 18px; display:block; margin: 8px 0;">\\( \\displaystyle ${finalExactTex} \\)</span>` : ''}
+      </div>
+      <div class="step-final-val" style="margin-top: 10px; font-size: 1.25rem; font-weight: 700; color: var(--primary);">
+        ${displayConstant ? '=' : '≈'} ${(displayConstant ? displayConstant.val : resultVal).toFixed(displayConstant ? 4 : 8)}
+      </div>
+      ${displayConstant ? `<div class="step-symbolic-val" style="font-size: 1.1rem; margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--success);">= ${displayConstant.sym}</div>` : ''}
+      <div style="margin-top: 10px; font-size: 0.85em; opacity: 0.7; font-style: italic;">
+        Calculated numerically using ${N}³ = ${N*N*N} sub-volumes.
+      </div>
     </div>
   </div>`;
-  return { html: html, exactVal: null };
+
+  if (nerdFailed) {
+    // Fallback: Elegant partition-based breakdown
+    const dx = (b - a) / N;
+    const cNum = Number(cExpr), dNum = Number(dExpr), eNum = Number(eExpr), fNum = Number(fExpr);
+    const dy = (!isNaN(cNum) && !isNaN(dNum)) ? ((dNum - cNum) / N).toFixed(6) : 'variable';
+    const dz = (!isNaN(eNum) && !isNaN(fNum)) ? ((fNum - eNum) / N).toFixed(6) : 'variable';
+    const jac = coordSystem==='spherical' ? '<em>Jacobian r²sin(φ) applied automatically.</em>' : '';
+    
+    const fallbackHTML = `
+    <div class="step-block">
+      <div class="step-block-title">Step 1 — Integral Setup</div>
+      <div class="step-content">
+        ∭ (${expr}) d${v1}d${v2}d${v3}<br>
+        ${v1} ∈ [${a}, ${b}],&nbsp; ${v2} ∈ [${cExpr}, ${dExpr}],&nbsp; ${v3} ∈ [${eExpr}, ${fExpr}]<br>
+        ${jac}
+      </div>
+    </div>
+    <div class="step-block">
+      <div class="step-block-title">Step 2 — Partition Setup (N = ${N} cells per axis)</div>
+      <div class="step-content">
+        Δ${v1} = ${dx.toFixed(6)},&nbsp; Δ${v2} = ${dy},&nbsp; Δ${v3} = ${dz}<br>
+        Total grid elements = ${N}³ = ${N*N*N}
+      </div>
+    </div>
+    <div class="step-block">
+      <div class="step-block-title">Step 3 — Midpoint Numerical Approximation</div>
+      <div class="step-content">
+        Integrating numerically by slicing along the axes:<br>
+        1. Slicing with respect to <strong>${v3}</strong> inner bound expressions.<br>
+        2. Integrating with respect to <strong>${v2}</strong> middle bound expressions.<br>
+        3. Evaluating outer sum with respect to <strong>${v1}</strong> from [${a}, ${b}].<br>
+        Result ≈ Σ f(${v1}ᵢ*, ${v2}ⱼ*, ${v3}ₖ*) · Δ${v1}·Δ${v2}·Δ${v3}
+      </div>
+    </div>
+    ${step4HTML}`;
+    return { html: fallbackHTML, exactVal: displayConstant ? displayConstant.val : null };
+  }
+
+  const completeHTML = step1HTML + step2HTML + step3HTML + step4HTML;
+  return { html: completeHTML, exactVal: displayConstant ? displayConstant.val : null };
 }
 
 /* ── Show / toggle steps card ──────────────────── */
@@ -509,6 +703,33 @@ function midpointTripleIntegral(fn, a, b, c, d, e, f, n) {
   return sum * dx * dy * dz;
 }
 
+/* ── Midpoint triple integral with variable middle/inner limits ── */
+// cFn(outerVal), dFn(outerVal)       = middle-axis lo/hi as fn of outer variable
+// eFn(outerVal, midVal), fFn(...)    = inner-axis lo/hi as fn of outer+middle
+function midpointTripleVariableInner(fn, a, b, cFn, dFn, eFn, fFn, n) {
+  const dx = (b - a) / n;
+  let total = 0;
+  for (let i = 0; i < n; i++) {
+    const xi = a + (i + 0.5) * dx;
+    const yLo = cFn(xi);
+    const yHi = dFn(xi);
+    if (!(yHi > yLo)) continue;
+    const dy = (yHi - yLo) / n;
+    for (let j = 0; j < n; j++) {
+      const yj = yLo + (j + 0.5) * dy;
+      const zLo = eFn(xi, yj);
+      const zHi = fFn(xi, yj);
+      if (!(zHi > zLo)) continue;
+      const dz = (zHi - zLo) / n;
+      for (let k = 0; k < n; k++) {
+        const zk = zLo + (k + 0.5) * dz;
+        total += fn(xi, yj, zk) * dz * dy * dx;
+      }
+    }
+  }
+  return total;
+}
+
 function parseNumber(id) {
   const val = Number(document.getElementById(id).value);
   if (Number.isNaN(val)) {
@@ -516,6 +737,23 @@ function parseNumber(id) {
   }
   return val;
 }
+
+/* ── Compile a limit that may be a constant OR an expression ─── */
+// outerVars: variables the limit can depend on, e.g. ['x'] or ['x','y']
+// Returns a plain function (...outerVals) => number
+function compileLimitFn(rawExpr, outerVars) {
+  const raw = String(rawExpr).trim();
+  const MNAMES = ['sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E'];
+  const MVALS  = [Math.sin,Math.cos,Math.tan,Math.sqrt,Math.abs,
+                  Math.exp,Math.log,Math.log,Math.pow,Math.PI,Math.E];
+  // If it's a plain number, return a constant function immediately
+  const num = Number(raw);
+  if (!isNaN(num) && raw !== '') return () => num;
+  // Otherwise compile as an expression
+  const fn = safeCompile(raw, [...outerVars, ...MNAMES]);
+  return (...vals) => fn(...vals, ...MVALS);
+}
+
 
 function scoreForm(formId, outputId) {
   const form = document.getElementById(formId);
@@ -984,14 +1222,16 @@ function renderTripleVisualization(modeInfo) {
     return;
   }
 
-  const fn = safeCompile(modeInfo.expr, ["rho", "phi", "theta", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
-  for (const rho of ax1) {
-    for (const phi of ax2) {
-      for (const theta of ax3) {
-        const x = rho * Math.sin(phi) * Math.cos(theta);
-        const y = rho * Math.sin(phi) * Math.sin(theta);
-        const z = rho * Math.cos(phi);
-        const v = fn(rho, phi, theta, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
+  // Spherical: axes order is r (ax1), theta-azimuthal (ax2), phi-polar (ax3)
+  // x = r sinφ cosθ,  y = r sinφ sinθ,  z = r cosφ
+  const fn = safeCompile(modeInfo.expr, ["r", "theta", "phi", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
+  for (const r of ax1) {
+    for (const theta of ax2) {
+      for (const phi of ax3) {
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+        const v = fn(r, theta, phi, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
         if (Number.isFinite(v)) {
           points.x.push(x);
           points.y.push(y);
@@ -1001,7 +1241,7 @@ function renderTripleVisualization(modeInfo) {
       }
     }
   }
-  renderScatter3D("Triple Integral Domain (Spherical to Cartesian)", points);
+  renderScatter3D("Triple Integral Domain (Polar/Spherical)", points);
 }
 
 function updateModeUI() {
@@ -1018,6 +1258,12 @@ function updateModeUI() {
   
   const funcInput = document.getElementById("funcInput");
 
+  const topRow = document.querySelector(".sim-top-row");
+  const panel3D = document.querySelector(".sim-3d-panel");
+  const bottomRow = document.getElementById("simBottomRow");
+  const solverTab = document.getElementById("solverTab");
+  const simPageSub = document.querySelector(".sim-page-sub");
+
   if (!mode || !coordSystem || !doubleCase) return; // safeguard
 
   // Reset all visibility
@@ -1028,6 +1274,15 @@ function updateModeUI() {
   innerUpperWrap.classList.add("hidden");
 
   if (mode.value === "double") {
+    // Restore 3D Panel and move bottomRow to the bottom of solverTab
+    if (panel3D) panel3D.style.display = "block";
+    if (bottomRow && solverTab && bottomRow.parentElement !== solverTab) {
+      solverTab.appendChild(bottomRow);
+    }
+    if (simPageSub) {
+      simPageSub.textContent = "Configure your double integral parameters and visualize the bounding region in 3D space.";
+    }
+
     // Populate coord options
     if (coordSystem.options.length !== 2 || coordSystem.options[0].value !== "cartesian2d") {
       coordSystem.innerHTML = `
@@ -1072,6 +1327,40 @@ function updateModeUI() {
         yMinWrap.classList.remove("hidden");
       }
     }
+  } else if (mode.value === "triple") {
+    // Hide 3D Panel and move bottomRow into topRow (right column)
+    if (panel3D) panel3D.style.display = "none";
+    if (bottomRow && topRow && bottomRow.parentElement !== topRow) {
+      topRow.appendChild(bottomRow);
+    }
+    if (simPageSub) {
+      simPageSub.textContent = "Configure your triple integral parameters and calculate the step-by-step evaluation.";
+    }
+
+    if (coordSystem.options.length !== 2 || coordSystem.options[0].value !== "cartesian3d") {
+      coordSystem.innerHTML = `
+        <option value="cartesian3d">Cartesian (x, y, z)</option>
+        <option value="spherical">Polar / Spherical (r, θ, φ)</option>
+      `;
+    }
+    doubleCaseWrap.classList.add("hidden");
+    innerLowerWrap.classList.add("hidden");
+    innerUpperWrap.classList.add("hidden");
+    xMinWrap.classList.remove("hidden");
+    yMinWrap.classList.remove("hidden");
+    zMinWrap.classList.remove("hidden");
+    const cs = coordSystem.value;
+    if (cs === "cartesian3d") {
+      xMinWrap.querySelector(".sc-limit-label").textContent = "x";
+      yMinWrap.querySelector(".sc-limit-label").textContent = "y";
+      zMinWrap.querySelector(".sc-limit-label").textContent = "z";
+      if (!funcInput.value.trim() || funcInput.value === "r" || funcInput.value === "x*y" || funcInput.value === "1") funcInput.value = "x*y*z";
+    } else {
+      xMinWrap.querySelector(".sc-limit-label").textContent = "r";
+      yMinWrap.querySelector(".sc-limit-label").textContent = "θ";
+      zMinWrap.querySelector(".sc-limit-label").textContent = "φ";
+      if (!funcInput.value.trim() || funcInput.value === "x*y*z" || funcInput.value === "x*y") funcInput.value = "r^2";
+    }
   }
 }
 
@@ -1100,18 +1389,24 @@ document.getElementById("solveBtn").addEventListener("click", () => {
   const resultEl = document.getElementById("integralResult");
   const metaEl = document.getElementById("integralMeta");
   let vizContext = null;
+  
+  const tryParseNumber = (id, fallback) => {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    const val = parseFloat(el.value);
+    return isNaN(val) ? fallback : val;
+  };
+
   try {
     const mode = document.getElementById("mode").value;
     const steps = mode === "double" ? 100 : 40;
     const coordSystem = document.getElementById("coordSystem").value;
     const expr = document.getElementById("funcInput").value.trim();
 
-    const a = parseNumber("xMin");
-    const b = parseNumber("xMax");
-    const cRaw = Number(document.getElementById("yMin").value);
-    const dRaw = Number(document.getElementById("yMax").value);
-
     if (mode === "double") {
+      const a = parseNumber("xMin");
+      const b = parseNumber("xMax");
+
       if (coordSystem === "polar") {
         const c = parseNumber("yMin");
         const d = parseNumber("yMax");
@@ -1153,6 +1448,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           const isExact = stepsRes.exactVal !== null;
           displayResult(isExact ? stepsRes.exactVal : val, `Case 1: outer x∈[${a},${b}], inner y = [g₁(x), g₂(x)]`, isExact);
           showSteps(stepsRes.html);
+          const cRaw = tryParseNumber("yMin", 0);
+          const dRaw = tryParseNumber("yMax", 1);
           const range = estimateInnerRange(
             a,
             b,
@@ -1195,6 +1492,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           const isExact = stepsRes.exactVal !== null;
           displayResult(isExact ? stepsRes.exactVal : val, `Case 2: outer y∈[${c},${d}], inner x = [h₁(y), h₂(y)]`, isExact);
           showSteps(stepsRes.html);
+          const aRaw = tryParseNumber("xMin", 0);
+          const bRaw = tryParseNumber("xMax", 1);
           const range = estimateInnerRange(
             c,
             d,
@@ -1208,8 +1507,8 @@ document.getElementById("solveBtn").addEventListener("click", () => {
             c,
             d,
             doubleCase,
-            a: Number.isFinite(a) && Number.isFinite(b) && b > a ? a : range ? range.min : 0,
-            b: Number.isFinite(a) && Number.isFinite(b) && b > a ? b : range ? range.max : 1,
+            a: Number.isFinite(aRaw) && Number.isFinite(bRaw) && bRaw > aRaw ? aRaw : range ? range.min : 0,
+            b: Number.isFinite(aRaw) && Number.isFinite(bRaw) && bRaw > aRaw ? bRaw : range ? range.max : 1,
             lowFn: (y) => lowFn(y, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
             upFn: (y) => upFn(y, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
             lowExpr, upExpr,
@@ -1241,57 +1540,139 @@ document.getElementById("solveBtn").addEventListener("click", () => {
         }
       }
     }
-    /*
     else {
-      const c = parseNumber("yMin");
-      const d = parseNumber("yMax");
-      if (!(b > a && d > c)) {
-        throw new Error("Ensure axis-1 max > min and axis-2 max > min.");
-      }
-      const e = parseNumber("zMin");
-      const f = parseNumber("zMax");
-      if (!(f > e)) {
-        throw new Error("Ensure third-axis max is greater than min.");
-      }
+      // Triple integral
+      const cRawExpr = document.getElementById('yMin').value.trim();
+      const dRawExpr = document.getElementById('yMax').value.trim();
+      const eRawExpr = document.getElementById('zMin').value.trim();
+      const fRawExpr = document.getElementById('zMax').value.trim();
 
-      if (coordSystem === "cylindrical") {
-        const fn = safeCompile(expr, ["r", "theta", "z", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
-        const wrapped = (r, theta, z) =>
-          fn(r, theta, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E) * r;
-        const val = midpointTripleIntegral(wrapped, a, b, c, d, e, f, steps);
-        const stepsRes = buildStepsTriple(expr, 'cylindrical', a, b, c, d, e, f, steps, val);
+      if (coordSystem === 'spherical') {
+        const a = parseNumber("xMin");
+        const b = parseNumber("xMax");
+        if (!(b > a)) throw new Error('Ensure outer-axis max > min.');
+
+        const fn = safeCompile(expr, ['r','theta','phi','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E']);
+        const wrapped = (r, theta, phi) =>
+          fn(r, theta, phi, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E) *
+          r * r * Math.sin(phi);
+        const cFn = compileLimitFn(cRawExpr, ['r']);
+        const dFn = compileLimitFn(dRawExpr, ['r']);
+        const eFn = compileLimitFn(eRawExpr, ['r', 'theta']);
+        const fFn = compileLimitFn(fRawExpr, ['r', 'theta']);
+        const val = midpointTripleVariableInner(wrapped, a, b, cFn, dFn, eFn, fFn, steps);
+        const stepsRes = buildStepsTriple(expr, 'spherical', a, b, cRawExpr, dRawExpr, eRawExpr, fRawExpr, steps, val);
         const isExact = stepsRes.exactVal !== undefined && stepsRes.exactVal !== null;
-        displayResult(isExact ? stepsRes.exactVal : val, `Cylindrical · Jacobian r · ${steps}³ cells`, isExact);
+        displayResult(isExact ? stepsRes.exactVal : val, `Polar/Spherical · Jacobian r²sin(φ) · adaptive midpoint`, isExact);
         showSteps(stepsRes.html);
-        vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
-      } else if (coordSystem === "spherical") {
-        const fn = safeCompile(expr, ["rho", "phi", "theta", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
-        const wrapped = (rho, phi, theta) =>
-          fn(rho, phi, theta, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E) *
-          rho *
-          rho *
-          Math.sin(phi);
-        const val = midpointTripleIntegral(wrapped, a, b, c, d, e, f, steps);
-        const stepsRes = buildStepsTriple(expr, 'spherical', a, b, c, d, e, f, steps, val);
-        const isExact = stepsRes.exactVal !== undefined && stepsRes.exactVal !== null;
-        displayResult(isExact ? stepsRes.exactVal : val, `Spherical · Jacobian ρ²sin(φ) · ${steps}³ cells`, isExact);
-        showSteps(stepsRes.html);
-        vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
+        vizContext = { mode: 'triple', coordSystem, expr, a, b };
       } else {
-        const fn = safeCompile(expr, ["x", "y", "z", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
+        const xMinRaw = document.getElementById('xMin').value.trim();
+        const xMaxRaw = document.getElementById('xMax').value.trim();
+
+        const getReferencedVars = (str) => {
+          if (!str) return [];
+          const vars = new Set();
+          const matches = str.match(/\b([xyz])\b/gi);
+          if (matches) matches.forEach(m => vars.add(m.toLowerCase()));
+          return Array.from(vars);
+        };
+
+        const deps = {
+          x: Array.from(new Set([...getReferencedVars(xMinRaw), ...getReferencedVars(xMaxRaw)])),
+          y: Array.from(new Set([...getReferencedVars(cRawExpr), ...getReferencedVars(dRawExpr)])),
+          z: Array.from(new Set([...getReferencedVars(eRawExpr), ...getReferencedVars(fRawExpr)]))
+        };
+
+        const depCounts = {
+          x: deps.x.length,
+          y: deps.y.length,
+          z: deps.z.length
+        };
+
+        const sorted = ['x', 'y', 'z'].sort((a, b) => depCounts[a] - depCounts[b]);
+        const outer = sorted[0];
+        const middle = sorted[1];
+        const inner = sorted[2];
+
+        const mapExpr = (str) => {
+          if (!str) return "";
+          let temp = str;
+          temp = temp.replace(/\bx\b/g, '__X_VAR__');
+          temp = temp.replace(/\by\b/g, '__Y_VAR__');
+          temp = temp.replace(/\bz\b/g, '__Z_VAR__');
+          
+          temp = temp.replace(new RegExp('__' + outer.toUpperCase() + '_VAR__', 'g'), 'x');
+          temp = temp.replace(new RegExp('__' + middle.toUpperCase() + '_VAR__', 'g'), 'y');
+          temp = temp.replace(new RegExp('__' + inner.toUpperCase() + '_VAR__', 'g'), 'z');
+          return temp;
+        };
+
+        const mappedExpr = mapExpr(expr);
+        const rawLimitsMap = {
+          x: { min: xMinRaw, max: xMaxRaw },
+          y: { min: cRawExpr, max: dRawExpr },
+          z: { min: eRawExpr, max: fRawExpr }
+        };
+
+        const mappedOuterMinRaw = mapExpr(rawLimitsMap[outer].min);
+        const mappedOuterMaxRaw = mapExpr(rawLimitsMap[outer].max);
+        const mappedMiddleMinRaw = mapExpr(rawLimitsMap[middle].min);
+        const mappedMiddleMaxRaw = mapExpr(rawLimitsMap[middle].max);
+        const mappedInnerMinRaw = mapExpr(rawLimitsMap[inner].min);
+        const mappedInnerMaxRaw = mapExpr(rawLimitsMap[inner].max);
+
+        const aVal = parseFloat(nerdamer(mappedOuterMinRaw).evaluate().text());
+        const bVal = parseFloat(nerdamer(mappedOuterMaxRaw).evaluate().text());
+        if (isNaN(aVal) || isNaN(bVal) || !(bVal > aVal)) {
+          throw new Error(`Outermost constant variable (${outer.toUpperCase()}) limits must evaluate to constants with max > min. Got [${mappedOuterMinRaw}, ${mappedOuterMaxRaw}]`);
+        }
+
+        const fn = safeCompile(mappedExpr, ['x','y','z','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E']);
         const wrapped = (x, y, z) =>
           fn(x, y, z, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E);
-        const val = midpointTripleIntegral(wrapped, a, b, c, d, e, f, steps);
-        const stepsRes = buildStepsTriple(expr, 'cartesian3d', a, b, c, d, e, f, steps, val);
+        const cFn = compileLimitFn(mappedMiddleMinRaw, ['x']);
+        const dFn = compileLimitFn(mappedMiddleMaxRaw, ['x']);
+        const eFn = compileLimitFn(mappedInnerMinRaw, ['x', 'y']);
+        const fFn = compileLimitFn(mappedInnerMaxRaw, ['x', 'y']);
+
+        const val = midpointTripleVariableInner(wrapped, aVal, bVal, cFn, dFn, eFn, fFn, steps);
+
+        const stepsRes = buildStepsTriple(mappedExpr, 'cartesian3d', aVal, bVal, mappedMiddleMinRaw, mappedMiddleMaxRaw, mappedInnerMinRaw, mappedInnerMaxRaw, steps, val);
         const isExact = stepsRes.exactVal !== undefined && stepsRes.exactVal !== null;
-        displayResult(isExact ? stepsRes.exactVal : val, `Cartesian · ${steps}³ midpoint cells`, isExact);
-        showSteps(stepsRes.html);
-        vizContext = { mode: "triple", coordSystem, expr, a, b, c, d, e, f };
+
+        let mappingNoticeHtml = "";
+        if (outer !== 'x' || middle !== 'y' || inner !== 'z') {
+          mappingNoticeHtml = `
+            <div class="sym-block" style="border-left: 4px solid var(--accent); background: #f0f6ff; padding: 12px 16px; margin-bottom: 16px; border-radius: 8px;">
+              <div style="font-weight: 700; color: var(--accent); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                🔄 Automatic Textbook Variable Mapping
+              </div>
+              <div style="font-size: 13.5px; color: var(--text2); line-height: 1.6;">
+                The textbook's integration order was automatically recognized based on variable dependencies:<br>
+                • <strong>Outermost constant variable:</strong> \\(${outer.toUpperCase()}\\) (mapped internally to \\(x\\))<br>
+                • <strong>Middle variable:</strong> \\(${middle.toUpperCase()}\\) (mapped internally to \\(y\\))<br>
+                • <strong>Innermost variable:</strong> \\(${inner.toUpperCase()}\\) (mapped internally to \\(z\\))
+              </div>
+            </div>
+          `;
+        }
+
+        displayResult(isExact ? stepsRes.exactVal : val, `Cartesian 3D · Auto-mapped [${outer}, ${middle}, ${inner}]`, isExact);
+        showSteps(mappingNoticeHtml + stepsRes.html);
+        vizContext = { mode: 'triple', coordSystem, expr, a: aVal, b: bVal };
       }
     }
-    */
     if (vizContext) {
-      renderDesmosRegion(vizContext);
+      if (vizContext.mode === 'triple') {
+        const el = document.getElementById('desmosDiv');
+        const st = document.getElementById('desmosStatus');
+        if (el) el.style.display = 'none';
+        if (st) { st.style.display = 'block'; st.textContent = 'Triple integral computed numerically. See step-by-step breakdown below.'; }
+        if (desmosCalc) desmosCalc.setBlank();
+      } else {
+        renderDesmosRegion(vizContext);
+      }
     }
     // Reveal the results panel
     document.getElementById('simBottomRow').style.display = 'flex';
@@ -1312,16 +1693,110 @@ document.getElementById("solveBtn").addEventListener("click", () => {
 
 
 const examples = [
-  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case1", func: "x^2 + y^2", xMin: "0", xMax: "2", yMin: "", yMax: "", innerLower: "0", innerUpper: "x" },
-  { mode: "double", coordSystem: "polar", doubleCase: "case3", func: "r^2 * cos(theta)", xMin: "0", xMax: "1", yMin: "0", yMax: "3.14159", innerLower: "", innerUpper: "" },
-  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case2", func: "exp(x+y)", xMin: "", xMax: "", yMin: "0", yMax: "1", innerLower: "y", innerUpper: "1" },
-  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case3", func: "sin(x) * cos(y)", xMin: "0", xMax: "3.14159", yMin: "0", yMax: "1.57079", innerLower: "", innerUpper: "" },
-  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case1", func: "x*y", xMin: "0", xMax: "1", yMin: "", yMax: "", innerLower: "x^2", innerUpper: "x" },
-  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case4", func: "x^3 + y^3", xMin: "-1", xMax: "1", yMin: "-1", yMax: "1", innerLower: "", innerUpper: "" },
-  { mode: "double", coordSystem: "polar", doubleCase: "case3", func: "r * sin(theta)", xMin: "0", xMax: "2", yMin: "0", yMax: "6.28318", innerLower: "", innerUpper: "" },
-  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case2", func: "x * exp(y)", xMin: "", xMax: "", yMin: "0", yMax: "1", innerLower: "0", innerUpper: "y" },
-  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case1", func: "1/(x^2 + y^2 + 1)", xMin: "0", xMax: "1", yMin: "", yMax: "", innerLower: "0", innerUpper: "1-x" },
-  { mode: "double", coordSystem: "cartesian2d", doubleCase: "case3", func: "exp(-x^2 - y^2)", xMin: "-2", xMax: "2", yMin: "-2", yMax: "2", innerLower: "", innerUpper: "" }
+  // ── DOUBLE · Cartesian Case 1 (outer x, variable y limits) ──────────────
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case1",
+    func: "exp(y/x)", xMin: "0", xMax: "1", yMin: "", yMax: "", innerLower: "0", innerUpper: "x",
+    label: "PDF Type-I Q4 · ∫₀¹∫₀ˣ eʸ/ˣ dy dx · Expected: (e−1)/2 ≈ 0.8591"
+  },
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case1",
+    func: "x*y*(x+y)", xMin: "0", xMax: "1", yMin: "", yMax: "", innerLower: "x^2", innerUpper: "x",
+    label: "PDF Type-II Q1 · ∫₀¹∫ₓ²ˣ xy(x+y) dy dx · Expected: 3/56 ≈ 0.0536"
+  },
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case1",
+    func: "1/(1+x^2+y^2)", xMin: "0", xMax: "1", yMin: "", yMax: "", innerLower: "0", innerUpper: "sqrt(1+x^2)",
+    label: "PDF Type-I Q1 · ∫₀¹∫₀^√(1+x²) 1/(1+x²+y²) dy dx · Expected: π/4·ln(1+√2) ≈ 0.6786"
+  },
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case1",
+    func: "x*y", xMin: "0", xMax: "1", yMin: "", yMax: "", innerLower: "x^2", innerUpper: "x",
+    label: "PDF Type-II — ∫₀¹∫ₓ²ˣ xy dy dx · Expected: 1/12 ≈ 0.0833"
+  },
+  // ── DOUBLE · Cartesian Case 2 (outer y, variable x limits) ──────────────
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case2",
+    func: "exp(y^2)", xMin: "", xMax: "", yMin: "0", yMax: "1", innerLower: "0", innerUpper: "2*y",
+    label: "PDF Type-II Q4 · ∫₀¹∫₀^{2y} eʸ² dx dy · Expected: e−1 ≈ 1.7183"
+  },
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case2",
+    func: "x*y*exp(-x^2)", xMin: "", xMax: "", yMin: "0", yMax: "1", innerLower: "0", innerUpper: "y",
+    label: "PDF Type-I Q5 · ∫₀¹∫₀ʸ xye^{-x²} dx dy · Expected: 1/(4e) ≈ 0.0920"
+  },
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case2",
+    func: "exp(x+y)", xMin: "", xMax: "", yMin: "0", yMax: "1", innerLower: "y", innerUpper: "1",
+    label: "PDF Type-I variant · ∫₀¹∫ᵧ¹ eˣ⁺ʸ dx dy · Expected: (e−1)²/2 ≈ 1.4761"
+  },
+  // ── DOUBLE · Cartesian Case 3 (rectangular) ─────────────────────────────
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case3",
+    func: "exp(-x^2-y^2)", xMin: "0", xMax: "2", yMin: "0", yMax: "2", innerLower: "", innerUpper: "",
+    label: "PDF Type-IV Q1 (large square ≈ quarter-plane) · Expected → π/4 ≈ 0.7854 as a→∞"
+  },
+  // ── DOUBLE · Cartesian Case 4 (separable) ───────────────────────────────
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case4",
+    func: "sin(x)*cos(y)", xMin: "0", xMax: "3.14159", yMin: "0", yMax: "1.5708", innerLower: "", innerUpper: "",
+    label: "Classic separable · ∫₀^π sin(x) dx · ∫₀^{π/2} cos(y) dy · Expected: 2×1 = 2"
+  },
+  {
+    mode: "double", coordSystem: "cartesian2d", doubleCase: "case3",
+    func: "exp(x+y+0*z)", xMin: "0", xMax: "1", yMin: "0", yMax: "1", innerLower: "", innerUpper: "",
+    label: "PDF Type-VI Q2 (double slice) · ∫₀¹∫₀¹ eˣ⁺ʸ dy dx · Expected: (e−1)² ≈ 2.9525"
+  },
+  // ── DOUBLE · Polar ────────────────────────────────────────────────────────
+  {
+    mode: "double", coordSystem: "polar", doubleCase: "case3",
+    func: "exp(-r^2)", xMin: "0", xMax: "1", yMin: "0", yMax: "1.5708", innerLower: "", innerUpper: "",
+    label: "PDF Type-IV Q1 (Polar) · ∫₀^{π/2}∫₀¹ e^{-r²}·r dr dθ · Expected: π/4·(1−1/e) ≈ 0.3974"
+  },
+  {
+    mode: "double", coordSystem: "polar", doubleCase: "case3",
+    func: "r^2*cos(theta)", xMin: "0", xMax: "2", yMin: "0", yMax: "1.5708", innerLower: "", innerUpper: "",
+    label: "PDF Type-III variant · ∫₀^{π/2}∫₀² r²cos(θ)·r dr dθ · Expected: 4"
+  },
+  {
+    mode: "double", coordSystem: "polar", doubleCase: "case3",
+    func: "sin(r^2)", xMin: "0", xMax: "1.7725", yMin: "0", yMax: "6.28318", innerLower: "", innerUpper: "",
+    label: "PDF Type-III Q1 (a=√π) · ∫₀^{2π}∫₀^√π sin(r²)·r dr dθ · Expected: π(1−cos(π))=2π≈6.2832"
+  },
+  // ── TRIPLE · Cartesian ────────────────────────────────────────────────────
+  {
+    mode: "triple", coordSystem: "cartesian3d",
+    func: "exp(x+y+z)", xMin: "0", xMax: "1", yMin: "0", yMax: "1", zMin: "0", zMax: "1",
+    label: "PDF Type-VI Q2 · ∭ eˣ⁺ʸ⁺ᶻ over unit cube · Expected: (e−1)³ ≈ 5.0731"
+  },
+  {
+    mode: "triple", coordSystem: "cartesian3d",
+    func: "exp(z)", xMin: "0", xMax: "1", yMin: "0", yMax: "1-x", zMin: "0", zMax: "x+y",
+    label: "PDF Type-VI Q5 · ∭ eᶻ, y∈[0,1−x], z∈[0,x+y] · Expected: 1/2 = 0.5000"
+  },
+  {
+    mode: "triple", coordSystem: "cartesian3d",
+    func: "1", xMin: "0", xMax: "1", yMin: "0", yMax: "1-x", zMin: "0", zMax: "1-x-y",
+    label: "PDF Type-IX Q15 · Volume of tetrahedron x+y+z≤1 · Expected: 1/6 ≈ 0.1667"
+  },
+  {
+    mode: "triple", coordSystem: "cartesian3d",
+    func: "x+y+z", xMin: "0", xMax: "1", yMin: "0", yMax: "1-x", zMin: "0", zMax: "1-x-y",
+    label: "PDF Type-VII Q2 (a=b=c=1) · ∭(x+y+z) over tetrahedron · Expected: abc(a+b+c)/24 = 3/24 = 0.125"
+  },
+  // ── TRIPLE · Polar / Spherical ────────────────────────────────────────────
+  {
+    mode: "triple", coordSystem: "spherical",
+    func: "r^3*sin(phi)^2*cos(phi)*cos(theta)*sin(theta)",
+    xMin: "0", xMax: "2", yMin: "0", yMax: "1.5708", zMin: "0", zMax: "1.5708",
+    label: "PDF Type-VIII Q3 · ∭ xyz over +ve octant of sphere r=2 · Expected: 4/3 ≈ 1.3333"
+  },
+  {
+    mode: "triple", coordSystem: "spherical",
+    func: "1",
+    xMin: "0", xMax: "1", yMin: "0", yMax: "6.28318", zMin: "0", zMax: "3.14159",
+    label: "Volume of unit sphere via spherical integration · Expected: 4π/3 ≈ 4.1888"
+  }
 ];
 
 let currentExampleIndex = -1;
@@ -1348,10 +1823,23 @@ document.getElementById("exampleBtn").addEventListener("click", () => {
   if (example.xMax !== undefined) document.getElementById("xMax").value = example.xMax;
   if (example.yMin !== undefined) document.getElementById("yMin").value = example.yMin;
   if (example.yMax !== undefined) document.getElementById("yMax").value = example.yMax;
+  if (example.zMin !== undefined) document.getElementById("zMin").value = example.zMin;
+  if (example.zMax !== undefined) document.getElementById("zMax").value = example.zMax;
   if (example.innerLower !== undefined) document.getElementById("innerLower").value = example.innerLower;
   if (example.innerUpper !== undefined) document.getElementById("innerUpper").value = example.innerUpper;
-  
-  // Match Vercel behavior: clear bottom panel and desmos plot explicitly so the user can manually click 'Compute Integral'
+
+  // Show label hint
+  const hint = document.getElementById("exampleHint");
+  if (hint) {
+    if (example.label) {
+      hint.textContent = example.label;
+      hint.style.display = "block";
+    } else {
+      hint.style.display = "none";
+    }
+  }
+
+  // Match Vercel behavior: clear bottom panel so user clicks Compute
   document.getElementById("integralResult").textContent = "Ready";
   document.getElementById("integralMeta").textContent = "Click Compute Integral to evaluate.";
   document.getElementById("integralSymbolic").style.display = "none";
