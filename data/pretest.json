@@ -1,0 +1,336 @@
+{
+  "title": "Pretest",
+  "description": "Assess your prerequisite knowledge before the experiment.",
+  "questions": [
+    {
+      "id": "pre1",
+      "text": "What does a double integral &int;&int;<sub>R</sub> f(x,y) dA represent geometrically?",
+      "options": [
+        {
+          "label": "Slope of the surface z = f(x,y)",
+          "correct": false
+        },
+        {
+          "label": "Volume under the surface z = f(x,y) above region R",
+          "correct": true
+        },
+        {
+          "label": "Length of the curve f(x,y) = 0",
+          "correct": false
+        },
+        {
+          "label": "Gradient of f(x,y) over R",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre2",
+      "text": "The notation &int;&int;<sub>R</sub> f(x,y) dA indicates integration over how many variables?",
+      "options": [
+        {
+          "label": "One variable",
+          "correct": false
+        },
+        {
+          "label": "Two variables",
+          "correct": true
+        },
+        {
+          "label": "Three variables",
+          "correct": false
+        },
+        {
+          "label": "Four variables",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre3",
+      "text": "In Cartesian coordinates, the area element dA in a double integral is:",
+      "options": [
+        {
+          "label": "dx + dy",
+          "correct": false
+        },
+        {
+          "label": "dx dy",
+          "correct": true
+        },
+        {
+          "label": "dx / dy",
+          "correct": false
+        },
+        {
+          "label": "x &middot; y",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre4",
+      "text": "A double integral can be considered an extension of which concept?",
+      "options": [
+        {
+          "label": "Differentiation",
+          "correct": false
+        },
+        {
+          "label": "Triple integration",
+          "correct": false
+        },
+        {
+          "label": "Single-variable integration",
+          "correct": true
+        },
+        {
+          "label": "Matrix multiplication",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre5",
+      "text": "Double integrals are evaluated over which type of domain?",
+      "options": [
+        {
+          "label": "A single point",
+          "correct": false
+        },
+        {
+          "label": "A curve in space",
+          "correct": false
+        },
+        {
+          "label": "A planar region R",
+          "correct": true
+        },
+        {
+          "label": "A solid 3D region",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre6",
+      "text": "The area of a planar region R can be computed using which double integral?",
+      "options": [
+        {
+          "label": "&int;&int;<sub>R</sub> f(x,y) dA",
+          "correct": false
+        },
+        {
+          "label": "&int;&int;<sub>R</sub> 1 dA",
+          "correct": true
+        },
+        {
+          "label": "&int; x dx",
+          "correct": false
+        },
+        {
+          "label": "&int;&int;&int; 1 dV",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre7",
+      "text": "Fubini's theorem states that a double integral over a rectangle can be evaluated as:",
+      "options": [
+        {
+          "label": "A single integral only",
+          "correct": false
+        },
+        {
+          "label": "An iterated integral in either order (dy dx or dx dy)",
+          "correct": true
+        },
+        {
+          "label": "A product of two gradients",
+          "correct": false
+        },
+        {
+          "label": "A triple integral",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre8",
+      "text": "In polar coordinates, x and y are expressed as:",
+      "options": [
+        {
+          "label": "x = r sin&theta;, y = r cos&theta;",
+          "correct": false
+        },
+        {
+          "label": "x = r cos&theta;, y = r sin&theta;",
+          "correct": true
+        },
+        {
+          "label": "x = &theta; cosr, y = &theta; sinr",
+          "correct": false
+        },
+        {
+          "label": "x = r, y = &theta;",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre9",
+      "text": "When converting a double integral to polar form, the area element dA becomes:",
+      "options": [
+        {
+          "label": "dr d&theta;",
+          "correct": false
+        },
+        {
+          "label": "r&sup2; dr d&theta;",
+          "correct": false
+        },
+        {
+          "label": "r dr d&theta;",
+          "correct": true
+        },
+        {
+          "label": "d&theta; / dr",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre10",
+      "text": "The Jacobian factor r in polar coordinates arises from:",
+      "options": [
+        {
+          "label": "Gradient of polar fields",
+          "correct": false
+        },
+        {
+          "label": "Taylor series expansion",
+          "correct": false
+        },
+        {
+          "label": "The Jacobian determinant of the coordinate transformation",
+          "correct": true
+        },
+        {
+          "label": "L'H&ocirc;pital's rule",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre11",
+      "text": "Polar coordinates are most suitable for evaluating double integrals over which regions?",
+      "options": [
+        {
+          "label": "Triangular regions",
+          "correct": false
+        },
+        {
+          "label": "Rectangular regions",
+          "correct": false
+        },
+        {
+          "label": "Circular or annular regions",
+          "correct": true
+        },
+        {
+          "label": "Parabolic regions",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre12",
+      "text": "In an iterated integral &int;<sub>a</sub><sup>b</sup>&int;<sub>c</sub><sup>d</sup> f(x,y) dy dx, which integration is performed first?",
+      "options": [
+        {
+          "label": "Integration with respect to x",
+          "correct": false
+        },
+        {
+          "label": "Integration with respect to y (the inner integral)",
+          "correct": true
+        },
+        {
+          "label": "Both simultaneously",
+          "correct": false
+        },
+        {
+          "label": "The outer integral first",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre13",
+      "text": "If f(x,y) = g(x)&middot;h(y) and the region is a rectangle, the double integral equals:",
+      "options": [
+        {
+          "label": "&int;g(x) dx + &int;h(y) dy",
+          "correct": false
+        },
+        {
+          "label": "[&int;g(x) dx] &times; [&int;h(y) dy]",
+          "correct": true
+        },
+        {
+          "label": "&int;g(x)&middot;h(y) dx",
+          "correct": false
+        },
+        {
+          "label": "g(x) / h(y)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre14",
+      "text": "Which theorem allows switching the order of integration in a double integral?",
+      "options": [
+        {
+          "label": "Green's theorem",
+          "correct": false
+        },
+        {
+          "label": "Stokes' theorem",
+          "correct": false
+        },
+        {
+          "label": "Fubini's theorem",
+          "correct": true
+        },
+        {
+          "label": "Rolle's theorem",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "pre15",
+      "text": "A double integral is primarily used to compute which of the following?",
+      "options": [
+        {
+          "label": "Length of a space curve",
+          "correct": false
+        },
+        {
+          "label": "Directional derivative of a function",
+          "correct": false
+        },
+        {
+          "label": "Eigenvalues of a matrix",
+          "correct": false
+        },
+        {
+          "label": "Area of a planar region or volume under a surface",
+          "correct": true
+        }
+      ]
+    }
+  ]
+}

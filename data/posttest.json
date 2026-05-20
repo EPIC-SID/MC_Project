@@ -1,0 +1,336 @@
+{
+  "title": "Posttest",
+  "description": "Evaluate your understanding after completing the experiment.",
+  "questions": [
+    {
+      "id": "post1",
+      "text": "Changing the order of integration in a double integral has what effect?",
+      "options": [
+        {
+          "label": "It always changes the value",
+          "correct": false
+        },
+        {
+          "label": "No effect on the value if the limits are set correctly",
+          "correct": true
+        },
+        {
+          "label": "It makes the integral zero",
+          "correct": false
+        },
+        {
+          "label": "It makes the integral undefined",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post2",
+      "text": "Evaluate &int;&int;<sub>R</sub> (x + y) dA over the rectangle x&isin;[0,1], y&isin;[0,1].",
+      "options": [
+        {
+          "label": "0.5",
+          "correct": false
+        },
+        {
+          "label": "1",
+          "correct": true
+        },
+        {
+          "label": "2",
+          "correct": false
+        },
+        {
+          "label": "0.25",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post3",
+      "text": "In polar coordinates, the correct volume element dA for a double integral is:",
+      "options": [
+        {
+          "label": "dr d&theta;",
+          "correct": false
+        },
+        {
+          "label": "r dr d&theta;",
+          "correct": true
+        },
+        {
+          "label": "r&sup2; dr d&theta;",
+          "correct": false
+        },
+        {
+          "label": "d&theta; dr / r",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post4",
+      "text": "The area of a disk of radius a using a double integral in polar form equals:",
+      "options": [
+        {
+          "label": "2&pi;a",
+          "correct": false
+        },
+        {
+          "label": "(4/3)&pi;a&sup3;",
+          "correct": false
+        },
+        {
+          "label": "&pi;a&sup2;",
+          "correct": true
+        },
+        {
+          "label": "2&pi;a&sup2;",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post5",
+      "text": "Polar coordinates are best suited for double integrals over which region?",
+      "options": [
+        {
+          "label": "Triangles",
+          "correct": false
+        },
+        {
+          "label": "Circles and annuli",
+          "correct": true
+        },
+        {
+          "label": "Squares",
+          "correct": false
+        },
+        {
+          "label": "Ellipses in Cartesian form",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post6",
+      "text": "To find the mass of a lamina with variable density &rho;(x,y), which integral is used?",
+      "options": [
+        {
+          "label": "&int;&int;<sub>R</sub> &rho;(x,y) dA",
+          "correct": true
+        },
+        {
+          "label": "&int;&int;<sub>R</sub> 1 dA",
+          "correct": false
+        },
+        {
+          "label": "&int; &rho;(x) dx",
+          "correct": false
+        },
+        {
+          "label": "&int;&int;&int; &rho; dV",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post7",
+      "text": "The key principle behind switching integration order in a double integral relies on:",
+      "options": [
+        {
+          "label": "Random approximation",
+          "correct": false
+        },
+        {
+          "label": "Fubini's theorem and continuity of f",
+          "correct": true
+        },
+        {
+          "label": "Numerical methods",
+          "correct": false
+        },
+        {
+          "label": "Differentiation under the integral sign",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post8",
+      "text": "Evaluate &int;<sub>0</sub><sup>1</sup> &int;<sub>0</sub><sup>1</sup> xy dy dx.",
+      "options": [
+        {
+          "label": "1",
+          "correct": false
+        },
+        {
+          "label": "1/2",
+          "correct": false
+        },
+        {
+          "label": "1/4",
+          "correct": true
+        },
+        {
+          "label": "1/8",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post9",
+      "text": "For a double integral over a type-I region (y-limits depend on x), the correct iterated form is:",
+      "options": [
+        {
+          "label": "&int;&int; f dy dy",
+          "correct": false
+        },
+        {
+          "label": "&int;<sub>a</sub><sup>b</sup> [&int;<sub>g1(x)</sub><sup>g2(x)</sup> f dy] dx",
+          "correct": true
+        },
+        {
+          "label": "&int;<sub>c</sub><sup>d</sup> [&int;<sub>h1(y)</sub><sup>h2(y)</sup> f dx] dy",
+          "correct": false
+        },
+        {
+          "label": "&int; f(x,y) dx",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post10",
+      "text": "What does &int;&int;<sub>R</sub> 1 dA compute for region R?",
+      "options": [
+        {
+          "label": "Volume of R",
+          "correct": false
+        },
+        {
+          "label": "Area of the region R",
+          "correct": true
+        },
+        {
+          "label": "Perimeter of R",
+          "correct": false
+        },
+        {
+          "label": "Density of R",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post11",
+      "text": "For a separable integrand f(x,y) = g(x)&middot;h(y) on a rectangle [a,b]&times;[c,d], the double integral equals:",
+      "options": [
+        {
+          "label": "g(b)&middot;h(d) &minus; g(a)&middot;h(c)",
+          "correct": false
+        },
+        {
+          "label": "[&int;<sub>a</sub><sup>b</sup> g(x) dx] &times; [&int;<sub>c</sub><sup>d</sup> h(y) dy]",
+          "correct": true
+        },
+        {
+          "label": "&int;<sub>a</sub><sup>b</sup> g(x) dx + &int;<sub>c</sub><sup>d</sup> h(y) dy",
+          "correct": false
+        },
+        {
+          "label": "g(x) / h(y)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post12",
+      "text": "The Jacobian factor r must be included in polar double integrals because:",
+      "options": [
+        {
+          "label": "It cancels with d&theta;",
+          "correct": false
+        },
+        {
+          "label": "It accounts for the stretching of area elements in polar coordinates",
+          "correct": true
+        },
+        {
+          "label": "It is needed only for r &gt; 1",
+          "correct": false
+        },
+        {
+          "label": "It is an optional scaling factor",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post13",
+      "text": "Which method is most suitable for evaluating &int;&int;<sub>x&sup2;+y&sup2;&le;4</sub> (x&sup2;+y&sup2;) dA?",
+      "options": [
+        {
+          "label": "Cartesian integration with constant limits",
+          "correct": false
+        },
+        {
+          "label": "Polar coordinate transformation",
+          "correct": true
+        },
+        {
+          "label": "Single-variable integration",
+          "correct": false
+        },
+        {
+          "label": "Numerical differentiation",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post14",
+      "text": "Double integration is particularly useful for finding which quantity for a 2D lamina?",
+      "options": [
+        {
+          "label": "Velocity at a point",
+          "correct": false
+        },
+        {
+          "label": "Mass, area, and centre of mass",
+          "correct": true
+        },
+        {
+          "label": "Electric field intensity",
+          "correct": false
+        },
+        {
+          "label": "Gradient vector field",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "post15",
+      "text": "The area of the quarter-disk of radius a in the first quadrant, using polar integration, equals:",
+      "options": [
+        {
+          "label": "&pi;a",
+          "correct": false
+        },
+        {
+          "label": "a&sup2;",
+          "correct": false
+        },
+        {
+          "label": "&pi;a&sup2; / 4",
+          "correct": true
+        },
+        {
+          "label": "2&pi;a&sup2;",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}
