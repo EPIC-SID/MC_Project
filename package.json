@@ -1,5 +1,21 @@
 {
+  "name": "mc-project",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "extract-quizzes": "node scripts/extract-quizzes.mjs",
+    "slim-quiz-html": "node scripts/slim-quiz-html.mjs"
+  },
   "dependencies": {
     "nerdamer": "^1.1.13"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4"
   }
 }
