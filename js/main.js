@@ -13,7 +13,9 @@ import { buildStepsTriple } from './steps/steps-triple.js';
 import { displayResult, showSteps } from './ui/display.js';
 import { updateMathPreview, updateModeUI, switchTab } from './ui/forms.js';
 import { scoreForm } from './ui/quizzes.js';
+import { initQuizzes } from './ui/quiz-render.js';
 import { examples } from './data/examples.js';
+import { pretestData, posttestData } from './data/quiz-data.js';
 
 // ── 1. Event Binding ────────────────────────────────
 
@@ -119,6 +121,7 @@ function bindEvents() {
 try {
   bindEvents();
   initDesmos();
+  initQuizzes(pretestData, posttestData);
   updateModeUI();
   updateMathPreview();
   switchTab("aimTab");
