@@ -2,7 +2,9 @@ import { toNerd, nSub } from '../core/parser.js';
 import { nerdamer } from '../core/nerdamer-setup.js';
 
 export function buildDUISSteps(expr, innerVar, innerLo, innerHi, outerVar, outerLo, outerHi) {
-    const normExpr = expr.replace(/\s+/g, '');
+  if (!nerdamer) return null;
+
+  const normExpr = expr.replace(/\s+/g, '');
   const _numEq = (v, n) => String(v).replace(/\.0+$/,'') === String(n) || Number(v) === n;
   
   // 1. Double Integral: 1 / (1 + x^2 + y^2) over Case 1 hyperbola region

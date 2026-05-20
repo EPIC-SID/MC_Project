@@ -1,9 +1,3 @@
-import nerdamer from 'nerdamer';
-import 'nerdamer/Algebra.js';
-import 'nerdamer/Calculus.js';
-
-if (typeof globalThis !== 'undefined') {
-  globalThis.nerdamer = nerdamer;
-}
-
+// This file safely exports the globally loaded nerdamer library for use in ES Modules.
+const nerdamer = window.nerdamer;
 export { nerdamer };

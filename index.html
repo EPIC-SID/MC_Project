@@ -11,6 +11,12 @@
   <link rel="stylesheet" href="styles.css?v=7" />
 </head>
 <body>
+<script>
+  if (window.location.protocol === 'file:') {
+    alert('Security Alert: This Virtual Lab uses modular JavaScript which is blocked by browsers when opened directly from a file (file://). \n\nPlease use a local server like VS Code "Live Server" or run "npx serve" in this folder to view the lab correctly.');
+  }
+  console.log("Index.html: Starting load...");
+</script>
 <div class="app-shell">
 
   <!-- SIDEBAR -->
@@ -471,8 +477,10 @@
 </div>
 
 <script src="https://cdn.plot.ly/plotly-2.24.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nerdamer@1.1.13/all.min.js"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script src="https://www.desmos.com/api/v1.12/calculator.js?apiKey=856ba2dd9f4d48eebdca1f6846f85776"></script>
-<script type="module" src="/js/main.js"></script>
+<script type="module" src="js/main.js"></script>
+<script>console.log("Index.html: Scripts finished loading.");</script>
 </body>
 </html>
