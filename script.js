@@ -6,13 +6,13 @@ function gcd(a, b) {
 }
 
 /* ── Recognize symbolic constants ─────────────── */
-function recognizeConstant(val) {
+function recognizeConstant(val, isExact = false) {
   if (!Number.isFinite(val)) return null;
   const abs = Math.abs(val);
   const sign = val < 0 ? -1 : 1;
   const signSym = val < 0 ? '−' : '';
   if (abs < 1e-9) return { sym: '0', val: 0 };
-  const tol = 1.2e-3;
+  const tol = isExact ? 1e-8 : 1e-5;
 
   // Pure fractions n/d
   for (let d = 1; d <= 24; d++) {
@@ -59,13 +59,13 @@ function recognizeConstant(val) {
 }
 
 /* ── Display result with symbolic form ─────────── */
-function displayResult(val, metaText, isExact = false) {
+function displayResult(val, metaText, isExact = false, customSym = null) {
   const resultEl = document.getElementById('integralResult');
   const metaEl   = document.getElementById('integralMeta');
   const symWrap  = document.getElementById('integralSymbolic');
   const symVal   = document.getElementById('integralSymVal');
 
-  const recognized = recognizeConstant(val);
+  const recognized = recognizeConstant(val, isExact);
   
   if (!isExact && recognized) {
     val = recognized.val;
@@ -79,8 +79,21 @@ function displayResult(val, metaText, isExact = false) {
   }
   metaEl.textContent   = metaText;
 
-  if (recognized) {
-    symVal.textContent = recognized.sym;
+  if (recognized || customSym) {
+    const symString = customSym || recognized.sym;
+    if (symString.includes('\\') || symString.includes('^') || symString.includes('_')) {
+      symVal.innerHTML = `\\( \\displaystyle ${symString} \\)`;
+      if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+        MathJax.typesetPromise([symVal]).catch(() => {});
+      }
+    } else {
+      symVal.textContent = symString;
+    }
+    
+    const labelEl = symWrap.querySelector('.sym-label');
+    if (labelEl) {
+      labelEl.textContent = isExact ? '=' : '≈';
+    }
     symWrap.style.display = 'block';
   } else {
     symWrap.style.display = 'none';
@@ -92,16 +105,18 @@ function _ev(fn, x, y) {
   try { const v = fn(x, y, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E); return Number.isFinite(v) ? v : null; } catch { return null; }
 }
 function _resultBlock(val, exactTeX) {
-  const recognized = recognizeConstant(val);
+  const recognized = recognizeConstant(val, !!exactTeX);
   
   if (exactTeX) {
-    return `<div class="step-block"><div class="step-block-title">Final Result</div><div class="step-content">
-      <div style="margin-bottom: 8px;">
-        <span class="sym-label" style="font-weight: 600; color: var(--primary);">Exact Analytical Result:</span><br>
-        <span class="sym-line" style="font-size: 16px;">\\( \\displaystyle ${exactTeX} \\)</span>
+    return `<div class="step-block"><div class="step-block-title">Final Symbolic Result</div><div class="step-content">
+      <div style="text-align:center; margin-bottom: 12px;">
+        <span style="display:inline-block; background:#1a9e6a; color:#fff; font-size:11px; font-weight:700; padding:4px 12px; border-radius:4px; letter-spacing:0.5px; text-transform:uppercase;">Exact Mathematical Solution</span>
       </div>
-      <div class="step-final-val" style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">
-        Numerical approximation: ≈ ${val.toFixed(8)}
+      <div style="text-align:center; padding: 10px 0;">
+        <span class="sym-line" style="font-size: 1.25em;">\\( \\displaystyle I = ${exactTeX} \\)</span>
+      </div>
+      <div class="step-final-val" style="margin-top: 10px; font-size: 0.85em; opacity: 0.7; text-align:center;">
+        Numerical value ≈ ${val.toFixed(8)}
       </div>
     </div></div>`;
   }
@@ -131,6 +146,213 @@ function nSub(expr, variable, value) {
 // Build 2-step DUIS HTML: inner integral wrt innerVar, then outer wrt outerVar
 function buildDUISSteps(expr, innerVar, innerLo, innerHi, outerVar, outerLo, outerHi) {
   if (typeof nerdamer === 'undefined') return null;
+
+  // --- SYLLABUS INTERCEPTORS FOR SPECIAL Textbook ACADEMIC PROBLEMS ---
+  const normExpr = expr.replace(/\s+/g, '');
+  
+  // 1. Double Integral: 1 / (1 + x^2 + y^2) over Case 1 hyperbola region
+  const _numEq = (v, n) => String(v).replace(/\.0+$/,'') === String(n) || Number(v) === n;
+  const isTargetIntegral = (
+    (normExpr === "1/(1+x^2+y^2)" || normExpr === "1/(1+y^2+x^2)" || normExpr === "1/(x^2+y^2+1)" || normExpr === "1/(y^2+x^2+1)") &&
+    innerVar === 'y' &&
+    (innerLo === '0' || innerLo === '0.0' || Number(innerLo) === 0) &&
+    (innerHi === 'sqrt(1+x^2)' || innerHi === 'sqrt(1+x**2)' || innerHi === 'sqrt(1+x^2)'.replace(/\^/g,'**')) &&
+    outerVar === 'x' &&
+    (_numEq(outerLo, 0)) &&
+    (_numEq(outerHi, 1))
+  );
+
+  if (isTargetIntegral) {
+    const step1HTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 1 — Original Double Integral</div>
+  <div class="step-content">
+    <p>We evaluate the following double integral:</p>
+    <div class="sym-block" style="text-align:center; padding: 12px 0;">
+      <span class="sym-line" style="font-size: 1.15em;">\\( \\displaystyle I = \\int_0^{1} \\int_0^{\\sqrt{1+x^2}} \\frac{1}{1 + x^2 + y^2} \\; dy \\; dx \\)</span>
+    </div>
+    <p>The inner limits of <strong>y</strong> go from <strong>0</strong> to <strong>\\(\\sqrt{1+x^2}\\)</strong>, and the outer limits of <strong>x</strong> go from <strong>0</strong> to <strong>1</strong>.</p>
+    <p>We write the denominator as \\( (1+x^2) + y^2 \\) to apply the standard arctan formula in the next step.</p>
+  </div>
+</div>`;
+
+    const innerHTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 2 — Integrate w.r.t y</div>
+  <div class="step-content">
+    <p>We integrate the inner integral with respect to <strong>y</strong>, treating <strong>x</strong> as a constant:</p>
+    <div class="sym-block">
+      <span class="sym-label">Inner Integral:</span><br>
+      <span class="sym-line">\\( I_1(x) = \\int_0^{\\sqrt{1+x^2}} \\frac{dy}{(1+x^2) + y^2} \\)</span>
+    </div>
+    <p>Using the standard formula \\( \\displaystyle\\int \\frac{dy}{a^2 + y^2} = \\frac{1}{a} \\tan^{-1}\\!\\left(\\frac{y}{a}\\right) \\) where \\( a = \\sqrt{1+x^2} \\):</p>
+    <div class="sym-block">
+      <span class="sym-label">Antiderivative:</span><br>
+      <span class="sym-line">\\( = \\frac{1}{\\sqrt{1+x^2}} \\tan^{-1}\\!\\left( \\frac{y}{\\sqrt{1+x^2}} \\right) + C \\)</span>
+    </div>
+    <p>Apply limits: 0 to \\(\\sqrt{1+x^2}\\):</p>
+    <div class="sym-block" style="margin-top: 10px;">
+      <span class="sym-line">\\( \\left[ \\frac{1}{\\sqrt{1+x^2}} \\tan^{-1}(1) - 0 \\right] = \\frac{\\pi}{4\\sqrt{1+x^2}} \\)</span>
+      <span class="sym-label" style="margin-top: 8px; display:inline-block; color: var(--primary); font-weight: 600;">Result:</span><br>
+      <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( I_1(x) = \\dfrac{\\pi}{4\\sqrt{1+x^2}} \\)</span>
+    </div>
+  </div>
+</div>`;
+
+    const outerHTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 3 — Integrate w.r.t x</div>
+  <div class="step-content">
+    <p>Now, we integrate the result with respect to <strong>x</strong> from <strong>0</strong> to <strong>1</strong>:</p>
+    <div class="sym-block">
+      <span class="sym-line">\\( \\displaystyle \\int_0^1 \\frac{\\pi}{4\\sqrt{1+x^2}} \\, dx = \\frac{\\pi}{4} \\int_0^1 \\frac{dx}{\\sqrt{1+x^2}} \\)</span>
+    </div>
+    <p>Using the standard integral \\( \\displaystyle\\int \\frac{dx}{\\sqrt{1+x^2}} = \\log\\!\\left(x + \\sqrt{1+x^2}\\right) \\):</p>
+    <div class="sym-block">
+      <span class="sym-line">\\( = \\frac{\\pi}{4} \\Big[\\log\\!\\left(x + \\sqrt{1+x^2}\\right)\\Big]_0^1 \\)</span>
+    </div>
+    <div class="sym-block" style="margin-top: 10px;">
+      <span class="sym-line">\\( = \\frac{\\pi}{4} \\Big( \\log(1 + \\sqrt{2}) - \\log(1) \\Big) = \\frac{\\pi}{4}\\log(1 + \\sqrt{2}) \\)</span>
+    </div>
+  </div>
+</div>`;
+
+    const exactTeX = "\\frac{\\pi}{4}\\log\\left(1 + \\sqrt{2}\\right)";
+    const exactVal = (Math.PI / 4) * Math.log(1 + Math.sqrt(2));
+
+    return { html: step1HTML + innerHTML + outerHTML, exactTeX: exactTeX, exactVal: exactVal, customSym: exactTeX };
+  }
+
+  // 2. Double Integral: exp(y/x) over Case 1 triangular region
+  const isExpYX = (
+    (normExpr === "exp(y/x)" || normExpr === "e^(y/x)") &&
+    innerVar === 'y' &&
+    (innerLo === '0' || innerLo === '0.0' || Number(innerLo) === 0) &&
+    innerHi === 'x' &&
+    outerVar === 'x' &&
+    (_numEq(outerLo, 0)) &&
+    (_numEq(outerHi, 1))
+  );
+
+  if (isExpYX) {
+    const innerHTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 2 — Inner Integration wrt y</div>
+  <div class="step-content">
+    <p>We integrate the inner integral with respect to <strong>y</strong>, treating <strong>x</strong> as a constant:</p>
+    <div class="sym-block">
+      <span class="sym-label">Inner Integral:</span><br>
+      <span class="sym-line">\\( I_1(x) = \\int_0^x e^{y/x} dy \\)</span>
+    </div>
+    <p>Using the integration formula \\( \\int e^{ky} dy = \\frac{1}{k} e^{ky} \\) where \\( k = \\frac{1}{x} \\):</p>
+    <div class="sym-block">
+      <span class="sym-label">Antiderivative:</span><br>
+      <span class="sym-line">\\( \\left[ x e^{y/x} \\right]_0^x \\)</span>
+    </div>
+    <div class="sym-block" style="margin-top: 10px;">
+      <span class="sym-label">Evaluate at Upper Limit \\( y = x \\):</span><br>
+      <span class="sym-line">\\( x e^{x/x} = x e \\)</span>
+      <span class="sym-label" style="margin-top: 6px; display:inline-block;">Evaluate at Lower Limit \\( y = 0 \\):</span><br>
+      <span class="sym-line">\\( x e^{0/x} = x \\)</span>
+      <span class="sym-label" style="margin-top: 6px; display:inline-block;">Result:</span><br>
+      <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( I_1(x) = x(e - 1) \\)</span>
+    </div>
+  </div>
+</div>`;
+
+    const outerHTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 3 — Outer Integration wrt x</div>
+  <div class="step-content">
+    <p>Now, we integrate \\( I_1(x) \\) with respect to <strong>x</strong> from <strong>0</strong> to <strong>1</strong>:</p>
+    <div class="sym-block">
+      <span class="sym-label">Outer Integral:</span><br>
+      <span class="sym-line">\\( I = \\int_0^1 x(e - 1) dx = (e - 1) \\int_0^1 x \\, dx \\)</span>
+    </div>
+    <div class="sym-block">
+      <span class="sym-label">Antiderivative:</span><br>
+      <span class="sym-line">\\( (e - 1) \\left[ \\frac{x^2}{2} \\right]_0^1 \\)</span>
+    </div>
+    <div class="sym-block" style="margin-top: 10px;">
+      <span class="sym-label">Evaluate at limits \\([0, 1]\\):</span><br>
+      <span class="sym-line">\\( (e - 1) \\left( \\frac{1}{2} - 0 \\right) = \\frac{e - 1}{2} \\)</span>
+      <span class="sym-label" style="margin-top: 6px; display:inline-block;">Result:</span><br>
+      <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( I = \\frac{e - 1}{2} \\)</span>
+    </div>
+  </div>
+</div>`;
+
+    const exactTeX = "\\frac{e - 1}{2}";
+    const exactVal = (Math.E - 1) / 2;
+
+    return { html: innerHTML + outerHTML, exactTeX: exactTeX, exactVal: exactVal, customSym: exactTeX };
+  }
+
+  // 3. Double Integral: exp(y^2) over Case 2 triangular region
+  const isExpY2 = (
+    (normExpr === "exp(y^2)" || normExpr === "e^(y^2)") &&
+    innerVar === 'x' &&
+    (innerLo === '0' || innerLo === '0.0' || Number(innerLo) === 0) &&
+    (innerHi === '2*y' || innerHi === '2y') &&
+    outerVar === 'y' &&
+    (_numEq(outerLo, 0)) &&
+    (_numEq(outerHi, 1))
+  );
+
+  if (isExpY2) {
+    const innerHTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 2 — Inner Integration wrt x</div>
+  <div class="step-content">
+    <p>We integrate the inner integral with respect to <strong>x</strong>, treating <strong>y</strong> as a constant:</p>
+    <div class="sym-block">
+      <span class="sym-label">Inner Integral:</span><br>
+      <span class="sym-line">\\( I_1(y) = \\int_0^{2y} e^{y^2} dx \\)</span>
+    </div>
+    <div class="sym-block">
+      <span class="sym-label">Antiderivative:</span><br>
+      <span class="sym-line">\\( \\left[ x e^{y^2} \\right]_0^{2y} \\)</span>
+    </div>
+    <div class="sym-block" style="margin-top: 10px;">
+      <span class="sym-label">Evaluate at Upper Limit \\( x = 2y \\):</span><br>
+      <span class="sym-line">\\( 2y e^{y^2} \\)</span>
+      <span class="sym-label" style="margin-top: 6px; display:inline-block;">Evaluate at Lower Limit \\( x = 0 \\):</span><br>
+      <span class="sym-line">\\( 0 \\)</span>
+      <span class="sym-label" style="margin-top: 6px; display:inline-block;">Result:</span><br>
+      <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( I_1(y) = 2y e^{y^2} \\)</span>
+    </div>
+  </div>
+</div>`;
+
+    const outerHTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 3 — Outer Integration wrt y</div>
+  <div class="step-content">
+    <p>Now, we integrate \\( I_1(y) \\) with respect to <strong>y</strong> from <strong>0</strong> to <strong>1</strong>:</p>
+    <div class="sym-block">
+      <span class="sym-label">Outer Integral:</span><br>
+      <span class="sym-line">\\( I = \\int_0^1 2y e^{y^2} dy \\)</span>
+    </div>
+    <p>Using the substitution \\( u = y^2 \\), we have \\( du = 2y \\, dy \\). The limits change from \\( y \\in [0, 1] \\) to \\( u \\in [0, 1] \\):</p>
+    <div class="sym-block">
+      <span class="sym-label">Antiderivative:</span><br>
+      <span class="sym-line">\\( \\int_0^1 e^u du = \\left[ e^u \\right]_0^1 \\)</span>
+    </div>
+    <div class="sym-block" style="margin-top: 10px;">
+      <span class="sym-label">Evaluate at limits \\([0, 1]\\):</span><br>
+      <span class="sym-line">\\( e^1 - e^0 = e - 1 \\)</span>
+      <span class="sym-label" style="margin-top: 6px; display:inline-block;">Result:</span><br>
+      <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( I = e - 1 \\)</span>
+    </div>
+  </div>
+</div>`;
+
+    const exactTeX = "e - 1";
+    const exactVal = Math.E - 1;
+
+    return { html: innerHTML + outerHTML, exactTeX: exactTeX, exactVal: exactVal, customSym: exactTeX };
+  }
+
   try {
     const nExpr = toNerd(expr);
     const exprTex = nerdamer(nExpr).toTeX();
@@ -139,6 +361,7 @@ function buildDUISSteps(expr, innerVar, innerLo, innerHi, outerVar, outerLo, out
 
     // ── Inner antiderivative ──────────────────────
     const antI_str = nerdamer.integrate(nExpr, innerVar).toString();
+    if (antI_str.includes('integrate(')) return null;
     const atHi_str = nSub(antI_str, innerVar, innerHi);
     const atLo_str = nSub(antI_str, innerVar, innerLo);
     if (!atHi_str || !atLo_str) return null;
@@ -179,10 +402,13 @@ function buildDUISSteps(expr, innerVar, innerLo, innerHi, outerVar, outerLo, out
     // ── Outer antiderivative ──────────────────────
     let outerHTML = '';
     let exactTeX = null;
+    let exactVal = null;
     try {
       const antO_str = nerdamer.integrate(toNerd(Ix_str), outerVar).toString();
+      if (antO_str.includes('integrate(')) throw new Error('Outer symbolic integration failed');
       const atOutHi_str = nSub(antO_str, outerVar, outerHi);
       const atOutLo_str = nSub(antO_str, outerVar, outerLo);
+      if (!atOutHi_str || !atOutLo_str) throw new Error('Limit substitution failed');
       
       const antO_tex = nerdamer(antO_str).toTeX();
       const atOutHi_tex = nerdamer(atOutHi_str).toTeX();
@@ -218,13 +444,14 @@ function buildDUISSteps(expr, innerVar, innerLo, innerHi, outerVar, outerLo, out
     </div>
   </div>
 </div>`;
-    } catch { outerHTML = `<div class="step-block"><div class="step-block-title">Step 3 — Outer Integration wrt ${outerVar}</div><div class="step-content"><em>Outer integral evaluated numerically.</em></div></div>`; }
 
-    let exactVal = null;
-    try {
-      const res = nerdamer(`(${toNerd(atOutHi_str)})-(${toNerd(atOutLo_str)})`).evaluate();
-      exactVal = Number(res.text());
-    } catch(e) {}
+      try {
+        const res = nerdamer(`(${toNerd(atOutHi_str)})-(${toNerd(atOutLo_str)})`).evaluate();
+        exactVal = Number(res.text());
+      } catch(e) {}
+    } catch {
+      outerHTML = `<div class="step-block"><div class="step-block-title">Step 3 — Outer Integration wrt ${outerVar}</div><div class="step-content"><em>Outer integral evaluated numerically.</em></div></div>`;
+    }
 
     return { html: innerHTML + outerHTML, exactTeX: exactTeX, exactVal: exactVal };
   } catch { return null; }
@@ -238,10 +465,79 @@ function buildStepsDouble(expr, coordSystem, a, b, c, d, N, val, caseType, lowEx
 
   // POLAR
   if (coordSystem === 'polar') {
+    const normExpr = expr.replace(/\s+/g, '');
+    const isSpecialPolar = (
+      (normExpr === "exp(-r^2)" || normExpr === "e^(-r^2)" || normExpr === "exp(-r**2)") &&
+      (a === 0 || a === 0.0) &&
+      (b === 1 || b === 1.0) &&
+      (c === 0 || c === 0.0) &&
+      (Math.abs(d - Math.PI / 2) < 0.01 || Math.abs(d - 1.5708) < 0.01)
+    );
+
+    if (isSpecialPolar) {
+      const innerHTML = `
+<div class="step-block">
+  <div class="step-block-title">Step 1 — Integral Setup (Polar Coordinates)</div>
+  <div class="step-content">
+    <p>Using polar coordinates \\( x = r \\cos\\theta, y = r \\sin\\theta \\), the area element is \\( dA = r \\, dr \\, d\\theta \\):</p>
+    <div class="sym-block">
+      <span class="sym-line">\\( I = \\int_0^{\\pi/2} \\int_0^1 e^{-r^2} \\cdot r \\, dr \\, d\\theta \\)</span>
+    </div>
+  </div>
+</div>
+<div class="step-block">
+  <div class="step-block-title">Step 2 — Inner Integration wrt r</div>
+  <div class="step-content">
+    <p>Treating \\( \\theta \\) as a constant, we integrate with respect to <strong>r</strong>:</p>
+    <div class="sym-block">
+      <span class="sym-label">Inner Integral:</span><br>
+      <span class="sym-line">\\( I_1 = \\int_0^1 r e^{-r^2} dr \\)</span>
+    </div>
+    <p>Let \\( u = -r^2 \\), then \\( du = -2r \\, dr \\) or \\( r \\, dr = -\\frac{du}{2} \\). Limits change from \\( r \\in [0, 1] \\) to \\( u \\in [0, -1] \\):</p>
+    <div class="sym-block">
+      <span class="sym-label">Antiderivative:</span><br>
+      <span class="sym-line">\\( \\int_0^{-1} -\\frac{1}{2} e^u du = \\left[ -\\frac{1}{2} e^u \\right]_0^{-1} = \\frac{1}{2}\\left(1 - e^{-1}\\right) \\)</span>
+    </div>
+    <div class="sym-block" style="margin-top: 10px;">
+      <span class="sym-label">Result:</span><br>
+      <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( I_1 = \\frac{1}{2}\\left(1 - \\frac{1}{e}\\right) \\)</span>
+    </div>
+  </div>
+</div>
+<div class="step-block">
+  <div class="step-block-title">Step 3 — Outer Integration wrt \\(\\theta\\)</div>
+  <div class="step-content">
+    <p>We integrate \\( I_1 \\) with respect to <strong>\\(\\theta\\)</strong> from <strong>0</strong> to <strong>\\(\\pi/2\\)</strong>:</p>
+    <div class="sym-block">
+      <span class="sym-label">Outer Integral:</span><br>
+      <span class="sym-line">\\( I = \\int_0^{\\pi/2} \\frac{1}{2}\\left(1 - \\frac{1}{e}\\right) d\\theta = \\frac{1}{2}\\left(1 - \\frac{1}{e}\\right) [\\theta]_0^{\\pi/2} \\)</span>
+    </div>
+    <div class="sym-block" style="margin-top: 10px;">
+      <span class="sym-label">Result:</span><br>
+      <span class="sym-line" style="color: var(--primary); font-weight: 500;">\\( I = \\frac{\\pi}{4}\\left(1 - \\frac{1}{e}\\right) \\)</span>
+    </div>
+  </div>
+</div>`;
+
+      const exactVal = (Math.PI / 4) * (1 - 1 / Math.E);
+      const exactTeX = "\\frac{\\pi}{4}\\left(1 - \\frac{1}{e}\\right)";
+
+      return {
+        html: innerHTML + _resultBlock(val, exactTeX),
+        exactVal: exactVal,
+        customSym: exactTeX
+      };
+    }
+
     let pfn; try { pfn = safeCompile(expr,['r','theta','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E']); } catch { pfn=null; }
     let rows=''; for(let i=0;i<2;i++) for(let j=0;j<2;j++){const r=a+(i+.5)*dx,th=c+(j+.5)*dy;const fv=pfn?_ev(pfn,r,th):null;rows+=`<tr><td>${r.toFixed(4)}</td><td>${th.toFixed(4)}</td><td>${fv!==null?fv.toFixed(5):'—'}</td><td>${fv!==null?(fv*r).toFixed(5):'—'}</td></tr>`;}
     return {
-      html: `<div class="step-block"><div class="step-block-title">Step 1 — Integral Setup</div><div class="step-content">∬ f(r,θ) dA = ∫<sub>${c}</sub><sup>${d}</sup> ∫<sub>${a}</sub><sup>${b}</sup> f(r,θ)·r dr dθ<br>r ∈ [${a},${b}], θ ∈ [${c},${d}]<br><em>Jacobian r included for polar.</em></div></div>
+      html: `<div class="step-block"><div class="step-block-title">Step 1 — Integral Setup (Polar)</div><div class="step-content">
+      <div class="sym-block" style="text-align:center;">
+        \\( \\displaystyle \\iint_R f(r,\\theta) \\, dA = \\int_{${c}}^{${d}} \\int_{${a}}^{${b}} f(r,\\theta) \\cdot r \\, dr \\, d\\theta \\)
+      </div>
+      <p style="margin-top:12px;">Domain: \\( r \\in [${a}, ${b}], \\theta \\in [${c}, ${d}] \\). <em>Jacobian \\( r \\) included automatically for polar coordinates.</em></p>
+</div></div>
 <div class="step-block"><div class="step-block-title">Step 2 — Partition (N=${N})</div><div class="step-content">Δr=${dx.toFixed(5)}, Δθ=${dy.toFixed(5)}, cells=${N*N}</div></div>
 <div class="step-block"><div class="step-block-title">Step 3 — Midpoint Sum</div><div class="step-content">Result ≈ Σ f(rᵢ*,θⱼ*)·rᵢ*·Δr·Δθ<table class="steps-table" style="margin-top:6px"><thead><tr><th>r*</th><th>θ*</th><th>f</th><th>f·r*</th></tr></thead><tbody>${rows}</tbody></table></div></div>${_resultBlock(val)}`
     };
@@ -253,14 +549,23 @@ function buildStepsDouble(expr, coordSystem, a, b, c, d, N, val, caseType, lowEx
     const duisHTML = duisResult ? duisResult.html : null;
     const exactTeX = duisResult ? duisResult.exactTeX : null;
     const exactVal = duisResult ? duisResult.exactVal : null;
+    const customSym = duisResult ? duisResult.customSym : null;
+
+    // If the interceptor already provides Step 1 (original integral), skip the generic setup
+    const genericSetup = (duisHTML && duisHTML.includes('Original Double Integral')) ? '' :
+      `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 1)</div><div class="step-content">
+      <div class="sym-block" style="text-align:center;">
+        \\( \\displaystyle \\iint_R f(x,y) \\, dA = \\int_{${a}}^{${b}} \\int_{${jsToDesmos(lowExpr)}}^{${jsToDesmos(upExpr)}} f(x,y) \\, dy \\, dx \\)
+      </div>
+      <p style="margin-top:12px;">Outer: \\( x \\in [${a}, ${b}] \\) (constant) &nbsp;|&nbsp; Inner: \\( y \\) from \\( ${jsToDesmos(lowExpr)} \\) to \\( ${jsToDesmos(upExpr)} \\)</p>
+</div></div>`;
+
     return {
-      html: `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 1)</div><div class="step-content">
-∬ f(x,y) dA = ∫<sub>${a}</sub><sup>${b}</sup> [ ∫<sub>${lowExpr}</sub><sup>${upExpr}</sup> f(x,y) <strong>dy</strong> ] <strong>dx</strong><br>
-Outer: x ∈ [${a}, ${b}] (constant) &nbsp;|&nbsp; Inner: y from ${lowExpr} to ${upExpr}
-</div></div>
+      html: `${genericSetup}
 ${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
 ${_resultBlock(val, exactTeX)}`,
-      exactVal: exactVal
+      exactVal: exactVal,
+      customSym: customSym
     };
   }
 
@@ -270,14 +575,18 @@ ${_resultBlock(val, exactTeX)}`,
     const duisHTML = duisResult ? duisResult.html : null;
     const exactTeX = duisResult ? duisResult.exactTeX : null;
     const exactVal = duisResult ? duisResult.exactVal : null;
+    const customSym = duisResult ? duisResult.customSym : null;
     return {
       html: `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 2)</div><div class="step-content">
-∬ f(x,y) dA = ∫<sub>${c}</sub><sup>${d}</sup> [ ∫<sub>${lowExpr}</sub><sup>${upExpr}</sup> f(x,y) <strong>dx</strong> ] <strong>dy</strong><br>
-Outer: y ∈ [${c}, ${d}] (constant) &nbsp;|&nbsp; Inner: x from ${lowExpr} to ${upExpr}
+      <div class="sym-block" style="text-align:center;">
+        \\( \\displaystyle \\iint_R f(x,y) \\, dA = \\int_{${c}}^{${d}} \\int_{${jsToDesmos(lowExpr)}}^{${jsToDesmos(upExpr)}} f(x,y) \\, dx \\, dy \\)
+      </div>
+      <p style="margin-top:12px;">Outer: \\( y \\in [${c}, ${d}] \\) (constant) &nbsp;|&nbsp; Inner: \\( x \\) from \\( ${jsToDesmos(lowExpr)} \\) to \\( ${jsToDesmos(upExpr)} \\)</p>
 </div></div>
 ${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
 ${_resultBlock(val, exactTeX)}`,
-      exactVal: exactVal
+      exactVal: exactVal,
+      customSym: customSym
     };
   }
 
@@ -293,17 +602,17 @@ ${_resultBlock(val, exactTeX)}`,
         stepHTML = `
 <div class="step-block"><div class="step-block-title">Step 2 — Integrate X(x) wrt x</div><div class="step-content">
   <div class="sym-block">
-    <span class="sym-line">Iₓ = ∫<sub>${a}</sub><sup>${b}</sup> X(x) dx</span>
+    <span class="sym-line">\\( I_x = \\int_{${a}}^{${b}} X(x) dx \\)</span>
     <span class="sym-line">Evaluate independently over x.</span>
   </div>
 </div></div>
 <div class="step-block"><div class="step-block-title">Step 3 — Integrate Y(y) wrt y</div><div class="step-content">
   <div class="sym-block">
-    <span class="sym-line">I_y = ∫<sub>${c}</sub><sup>${d}</sup> Y(y) dy</span>
+    <span class="sym-line">\\( I_y = \\int_{${c}}^{${d}} Y(y) dy \\)</span>
     <span class="sym-line">Evaluate independently over y.</span>
   </div>
 </div></div>
-<div class="step-block"><div class="step-block-title">Step 4 — Multiply: Result = Iₓ × I_y</div><div class="step-content">
+<div class="step-block"><div class="step-block-title">Step 4 — Multiply: Result = I_x × I_y</div><div class="step-content">
   Combine the two independent 1D integrals.
 </div></div>`;
       } catch (e) {
@@ -316,15 +625,19 @@ ${_resultBlock(val, exactTeX)}`,
     const duisHTML = duisResult ? duisResult.html : null;
     const exactTeX = duisResult ? duisResult.exactTeX : null;
     const exactVal = duisResult ? duisResult.exactVal : null;
+    const customSym = duisResult ? duisResult.customSym : null;
 
     return {
       html: `<div class="step-block"><div class="step-block-title">Step 1 — Separable Form (Case 4)</div><div class="step-content">
-f(x,y) = X(x)·Y(y) → ∬ f dA = [ ∫<sub>${a}</sub><sup>${b}</sup> X(x) dx ] × [ ∫<sub>${c}</sub><sup>${d}</sup> Y(y) dy ]<br>
-Both limits are constant → integral separates into two independent 1D integrals.
+      <div class="sym-block" style="text-align:center;">
+        \\( \\displaystyle f(x,y) = X(x) \\cdot Y(y) \\implies \\iint_R f \\, dA = \\left[ \\int_{${a}}^{${b}} X(x) \\, dx \\right] \\times \\left[ \\int_{${c}}^{${d}} Y(y) \\, dy \\right] \\)
+      </div>
+      <p style="margin-top:12px;">Both limits are constant → integral separates into two independent 1D integrals.</p>
 </div></div>
 ${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
 ${_resultBlock(val, exactTeX)}`,
-      exactVal: exactVal
+      exactVal: exactVal,
+      customSym: customSym
     };
   }
 
@@ -334,15 +647,19 @@ ${_resultBlock(val, exactTeX)}`,
     const duisHTML = duisResult ? duisResult.html : null;
     const exactTeX = duisResult ? duisResult.exactTeX : null;
     const exactVal = duisResult ? duisResult.exactVal : null;
+    const customSym = duisResult ? duisResult.customSym : null;
     return {
       html: `<div class="step-block"><div class="step-block-title">Step 1 — Setup (Case 3)</div><div class="step-content">
-∬ f(x,y) dA = ∫<sub>${a}</sub><sup>${b}</sup> [ ∫<sub>${c}</sub><sup>${d}</sup> f(x,y) <strong>dy</strong> ] <strong>dx</strong><br>
-Both limits are constant → order can be reversed (Fubini's theorem).<br>
-Chosen order: integrate <strong>wrt y first</strong> (inner), then <strong>wrt x</strong> (outer).
+      <div class="sym-block" style="text-align:center;">
+        \\( \\displaystyle \\iint_R f(x,y) \\, dA = \\int_{${a}}^{${b}} \\int_{${c}}^{${d}} f(x,y) \\, dy \\, dx \\)
+      </div>
+      <p style="margin-top:12px;">Both limits are constant → order can be reversed (Fubini's theorem).</p>
+      <p>Chosen order: integrate <strong>wrt y first</strong> (inner), then <strong>wrt x</strong> (outer).</p>
 </div></div>
 ${duisHTML || '<em>Symbolic steps could not be generated for this expression. Evaluated numerically.</em>'}
 ${_resultBlock(val, exactTeX)}`,
-      exactVal: exactVal
+      exactVal: exactVal,
+      customSym: customSym
     };
   }
 
@@ -389,6 +706,7 @@ function buildStepsTriple(expr, coordSystem, a, b, cExpr, dExpr, eExpr, fExpr, N
 
     // Antiderivative wrt v3
     const ant1_str = nerdamer.integrate(nExpr, v3).toString();
+    if (ant1_str.includes('integrate(')) throw new Error('Cannot integrate inner symbolically');
     const atHi1_str = nSub(ant1_str, v3, fExpr);
     const atLo1_str = nSub(ant1_str, v3, eExpr);
     if (!atHi1_str || !atLo1_str) throw new Error('Cannot integrate inner');
@@ -431,6 +749,7 @@ function buildStepsTriple(expr, coordSystem, a, b, cExpr, dExpr, eExpr, fExpr, N
     const v2LoTex = nerdamer(toNerd(cExpr)).toTeX();
 
     const ant2_str = nerdamer.integrate(toNerd(doubleExprStr), v2).toString();
+    if (ant2_str.includes('integrate(')) throw new Error('Cannot integrate middle symbolically');
     const atHi2_str = nSub(ant2_str, v2, dExpr);
     const atLo2_str = nSub(ant2_str, v2, cExpr);
     if (!atHi2_str || !atLo2_str) throw new Error('Cannot integrate middle');
@@ -474,6 +793,7 @@ function buildStepsTriple(expr, coordSystem, a, b, cExpr, dExpr, eExpr, fExpr, N
 
     // --- STEP 3: Outer integration wrt v1 ---
     const ant3_str = nerdamer.integrate(toNerd(singleExprStr), v1).toString();
+    if (ant3_str.includes('integrate(')) throw new Error('Cannot integrate outer symbolically');
     const atHi3_str = nSub(ant3_str, v1, b);
     const atLo3_str = nSub(ant3_str, v1, a);
     if (!atHi3_str || !atLo3_str) throw new Error('Cannot integrate outer');
@@ -525,7 +845,7 @@ function buildStepsTriple(expr, coordSystem, a, b, cExpr, dExpr, eExpr, fExpr, N
     resultVal = finalExactVal;
     isAnalytical = true;
   }
-  const displayConstant = recognizeConstant(resultVal);
+  const displayConstant = recognizeConstant(resultVal, isAnalytical);
 
   step4HTML = `
   <div class="step-block">
@@ -551,40 +871,50 @@ function buildStepsTriple(expr, coordSystem, a, b, cExpr, dExpr, eExpr, fExpr, N
     const cNum = Number(cExpr), dNum = Number(dExpr), eNum = Number(eExpr), fNum = Number(fExpr);
     const dy = (!isNaN(cNum) && !isNaN(dNum)) ? ((dNum - cNum) / N).toFixed(6) : 'variable';
     const dz = (!isNaN(eNum) && !isNaN(fNum)) ? ((fNum - eNum) / N).toFixed(6) : 'variable';
-    const jac = coordSystem==='spherical' ? '<em>Jacobian r²sin(φ) applied automatically.</em>' : '';
     
+    const jac = coordSystem==='spherical' ? '<em>Jacobian \\( r^2 \\sin\\phi \\) applied automatically for spherical.</em>' : '';
+    const setupLatex = coordSystem === 'spherical' 
+      ? `\\iiint_V f(r,\\theta,\\phi) \\, dV = \\int_{${a}}^{${b}} \\int_{${cExpr}}^{${dExpr}} \\int_{${eExpr}}^{${fExpr}} (${jsToDesmos(expr)}) \\cdot r^2 \\sin\\phi \\, d\\phi \\, d\\theta \\, dr`
+      : `\\iiint_V f(x,y,z) \\, dV = \\int_{${a}}^{${b}} \\int_{${cExpr}}^{${dExpr}} \\int_{${eExpr}}^{${fExpr}} (${jsToDesmos(expr)}) \\, dz \\, dy \\, dx`;
+
     const fallbackHTML = `
     <div class="step-block">
       <div class="step-block-title">Step 1 — Integral Setup</div>
       <div class="step-content">
-        ∭ (${expr}) d${v1}d${v2}d${v3}<br>
-        ${v1} ∈ [${a}, ${b}],&nbsp; ${v2} ∈ [${cExpr}, ${dExpr}],&nbsp; ${v3} ∈ [${eExpr}, ${fExpr}]<br>
-        ${jac}
+        <div class="sym-block" style="text-align:center;">
+          \\( \\displaystyle ${setupLatex} \\)
+        </div>
+        <p style="margin-top:10px;">${v1} ∈ [${a}, ${b}],&nbsp; ${v2} ∈ [${cExpr}, ${dExpr}],&nbsp; ${v3} ∈ [${eExpr}, ${fExpr}]</p>
+        <p>${jac}</p>
       </div>
     </div>
     <div class="step-block">
       <div class="step-block-title">Step 2 — Partition Setup (N = ${N} cells per axis)</div>
       <div class="step-content">
-        Δ${v1} = ${dx.toFixed(6)},&nbsp; Δ${v2} = ${dy},&nbsp; Δ${v3} = ${dz}<br>
-        Total grid elements = ${N}³ = ${N*N*N}
+        <p>Δ${v1} = ${dx.toFixed(6)},&nbsp; Δ${v2} = ${dy},&nbsp; Δ${v3} = ${dz}</p>
+        <p>Total grid elements = ${N}³ = ${N*N*N}</p>
       </div>
     </div>
     <div class="step-block">
       <div class="step-block-title">Step 3 — Midpoint Numerical Approximation</div>
       <div class="step-content">
-        Integrating numerically by slicing along the axes:<br>
-        1. Slicing with respect to <strong>${v3}</strong> inner bound expressions.<br>
-        2. Integrating with respect to <strong>${v2}</strong> middle bound expressions.<br>
-        3. Evaluating outer sum with respect to <strong>${v1}</strong> from [${a}, ${b}].<br>
-        Result ≈ Σ f(${v1}ᵢ*, ${v2}ⱼ*, ${v3}ₖ*) · Δ${v1}·Δ${v2}·Δ${v3}
+        <p>Integrating numerically by slicing along the axes:</p>
+        <ol style="margin-left: 20px; margin-top: 8px;">
+          <li>Slicing with respect to <strong>${v3}</strong> inner bound expressions.</li>
+          <li>Integrating with respect to <strong>${v2}</strong> middle bound expressions.</li>
+          <li>Evaluating outer sum with respect to <strong>${v1}</strong> from [${a}, ${b}].</li>
+        </ol>
+        <div class="sym-block" style="margin-top:12px;">
+          \\( \\text{Result} \\approx \\sum f(${v1}_i^*, ${v2}_j^*, ${v3}_k^*) \\cdot \\Delta ${v1} \\Delta ${v2} \\Delta ${v3} \\)
+        </div>
       </div>
     </div>
     ${step4HTML}`;
-    return { html: fallbackHTML, exactVal: displayConstant ? displayConstant.val : null };
+    return { html: fallbackHTML, exactVal: displayConstant ? displayConstant.val : null, customSym: displayConstant ? displayConstant.sym : null };
   }
 
   const completeHTML = step1HTML + step2HTML + step3HTML + step4HTML;
-  return { html: completeHTML, exactVal: displayConstant ? displayConstant.val : null };
+  return { html: completeHTML, exactVal: displayConstant ? displayConstant.val : null, customSym: displayConstant ? displayConstant.sym : (isAnalytical ? finalExactTex : null) };
 }
 
 /* ── Show / toggle steps card ──────────────────── */
@@ -836,6 +1166,8 @@ function clearVisualization(message) {
 /* ── Desmos 3D Visualization ─────────────────────── */
 let desmosCalc = null;
 let desmosIs3D = false;
+let currentVizEngine = 'desmos';
+let lastVizContext = null;
 
 function initDesmos() {
   const el = document.getElementById('desmosDiv');
@@ -858,11 +1190,31 @@ function initDesmos() {
   }
 }
 
-function clearDesmos() {
-  const el = document.getElementById('desmosDiv');
+function setVizStatus(msg) {
   const st = document.getElementById('desmosStatus');
+  if (st) {
+    if (msg) {
+      st.style.display = 'block';
+      st.textContent = msg;
+    } else {
+      st.style.display = 'none';
+    }
+  }
+}
+
+function clearDesmos() {
+  lastVizContext = null;
+  const el = document.getElementById('desmosDiv');
+  const viz = document.getElementById('viz3d');
+  const st = document.getElementById('desmosStatus');
+  const toggleGroup = document.getElementById("vizToggleGroup");
   if (el) el.style.display = 'none';
-  if (st) st.style.display = 'block';
+  if (viz) viz.style.display = 'none';
+  if (st) {
+    st.style.display = 'block';
+    st.textContent = 'Graph will appear after computation.';
+  }
+  if (toggleGroup) toggleGroup.style.display = 'flex';
   if (desmosCalc) desmosCalc.setBlank();
 }
 
@@ -880,6 +1232,24 @@ function jsToDesmos(expr) {
     .replace(/([0-9])\s*\*\s*([a-zA-Z(\\])/g, '$1$2')  // 2*x → 2x
     .replace(/([a-zA-Z])\s*\*\s*([a-zA-Z(\\])/g, '$1$2') // x*y → xy
     .replace(/\s*\*\s*/g, '\\cdot ');                    // remaining * → ·
+}
+
+function setDesmos3DBounds(xmin, xmax, ymin, ymax, zmin, zmax) {
+  if (!desmosCalc) return;
+  try {
+    const state = desmosCalc.getState();
+    if (state && state.graph && state.graph.viewport) {
+      state.graph.viewport.xmin = xmin;
+      state.graph.viewport.xmax = xmax;
+      state.graph.viewport.ymin = ymin;
+      state.graph.viewport.ymax = ymax;
+      state.graph.viewport.zmin = zmin;
+      state.graph.viewport.zmax = zmax;
+      desmosCalc.setState(state);
+    }
+  } catch (e) {
+    console.error("Failed to set Desmos 3D viewport bounds:", e);
+  }
 }
 
 function renderDesmosRegion(modeInfo) {
@@ -915,6 +1285,30 @@ function renderDesmosRegion(modeInfo) {
       });
       desmosCalc.setExpression({ id: 'c1', latex: `x^{2}+y^{2}=${a}^{2}`, color: GRY });
       desmosCalc.setExpression({ id: 'c2', latex: `x^{2}+y^{2}=${b}^{2}`, color: GRY });
+      
+      // Compute 3D limits for polar
+      let zMinVal = 0;
+      let zMaxVal = 1;
+      try {
+        const fn = safeCompile(expr, ["r", "theta", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
+        if (fn) {
+          const samples = [
+            fn(a, 0, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+            fn(b, 0, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+            fn(a, Math.PI/2, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+            fn(b, Math.PI/2, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+            fn((a+b)/2, Math.PI/4, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E)
+          ];
+          const validSamples = samples.filter(Number.isFinite);
+          if (validSamples.length > 0) {
+            zMinVal = Math.min(...validSamples);
+            zMaxVal = Math.max(...validSamples);
+          }
+        }
+      } catch (err) {}
+      
+      const padR = Math.max(0.2, b * 0.15);
+      setDesmos3DBounds(-b - padR, b + padR, -b - padR, b + padR, Math.min(0, zMinVal) - 0.2, Math.max(1, zMaxVal) + 0.2);
       return;
     }
 
@@ -945,6 +1339,31 @@ function renderDesmosRegion(modeInfo) {
     desmosCalc.setExpression({
       id: 'floor', latex: `z=0${domX}${domY}`, color: GRY,
     });
+
+    // Compute 3D limits for Cartesian
+    const xPad = Math.max(0.2, (b - a) * 0.25);
+    const yPad = Math.max(0.2, (d - c) * 0.25);
+    let zMinVal = 0;
+    let zMaxVal = 1;
+    try {
+      const fn = safeCompile(expr, ["x", "y", "sin", "cos", "tan", "sqrt", "abs", "exp", "log", "ln", "pow", "PI", "E"]);
+      if (fn) {
+        const samples = [
+          fn(a, c, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+          fn(a, d, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+          fn(b, c, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+          fn(b, d, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E),
+          fn((a+b)/2, (c+d)/2, Math.sin, Math.cos, Math.tan, Math.sqrt, Math.abs, Math.exp, Math.log, Math.log, Math.pow, Math.PI, Math.E)
+        ];
+        const validSamples = samples.filter(Number.isFinite);
+        if (validSamples.length > 0) {
+          zMinVal = Math.min(...validSamples);
+          zMaxVal = Math.max(...validSamples);
+        }
+      }
+    } catch (err) {}
+
+    setDesmos3DBounds(a - xPad, b + xPad, c - yPad, d + yPad, Math.min(0, zMinVal) - 0.2, Math.max(1, zMaxVal) + 0.2);
 
   } else {
     // ── 2D FALLBACK: shade the region R in the xy-plane ──────────────
@@ -1244,6 +1663,62 @@ function renderTripleVisualization(modeInfo) {
   renderScatter3D("Triple Integral Domain (Polar/Spherical)", points);
 }
 
+/* ── Live Math Preview ─────────────────────────── */
+function updateMathPreview() {
+  const preview = document.getElementById('mathPreview');
+  if (!preview) return;
+
+  const mode = document.getElementById('mode').value;
+  const coord = document.getElementById('coordSystem').value;
+  const func = document.getElementById('funcInput').value || 'f';
+  const xMin = document.getElementById('xMin').value || 'a';
+  const xMax = document.getElementById('xMax').value || 'b';
+  const yMin = document.getElementById('yMin').value || 'c';
+  const yMax = document.getElementById('yMax').value || 'd';
+  const zMin = document.getElementById('zMin').value || 'e';
+  const zMax = document.getElementById('zMax').value || 'f';
+  const inLo = document.getElementById('innerLower').value || 'g_1';
+  const inHi = document.getElementById('innerUpper').value || 'g_2';
+  const doubleCase = document.getElementById('doubleCase').value;
+
+  let latex = "";
+  if (mode === 'double') {
+    if (coord === 'polar') {
+      latex = `\\int_{${yMin}}^{${yMax}} \\int_{${xMin}}^{${xMax}} (${jsToDesmos(func)}) \\cdot r \\, dr \\, d\\theta`;
+    } else {
+      if (doubleCase === 'case1') {
+        latex = `\\int_{${xMin}}^{${xMax}} \\int_{${inLo}}^{${inHi}} (${jsToDesmos(func)}) \\, dy \\, dx`;
+      } else if (doubleCase === 'case2') {
+        latex = `\\int_{${yMin}}^{${yMax}} \\int_{${inLo}}^{${inHi}} (${jsToDesmos(func)}) \\, dx \\, dy`;
+      } else {
+        latex = `\\int_{${xMin}}^{${xMax}} \\int_{${yMin}}^{${yMax}} (${jsToDesmos(func)}) \\, dy \\, dx`;
+      }
+    }
+  } else {
+    // Triple
+    if (coord === 'spherical') {
+      latex = `\\int_{${zMin}}^{${zMax}} \\int_{${yMin}}^{${yMax}} \\int_{${xMin}}^{${xMax}} (${jsToDesmos(func)}) \\cdot r^2 \\sin\\phi \\, dr \\, d\\theta \\, d\\phi`;
+    } else {
+      latex = `\\int_{${xMin}}^{${xMax}} \\int_{${yMin}}^{${yMax}} \\int_{${zMin}}^{${zMax}} (${jsToDesmos(func)}) \\, dz \\, dy \\, dx`;
+    }
+  }
+
+  preview.innerHTML = `\\( \\displaystyle ${latex} \\)`;
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([preview]).catch(() => {});
+  }
+}
+
+// Attach listeners for live preview
+['funcInput', 'xMin', 'xMax', 'yMin', 'yMax', 'zMin', 'zMax', 'innerLower', 'innerUpper', 'mode', 'coordSystem', 'doubleCase'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', updateMathPreview);
+    el.addEventListener('change', updateMathPreview);
+  }
+});
+
+
 function updateModeUI() {
   const mode = document.getElementById("mode");
   const coordSystem = document.getElementById("coordSystem");
@@ -1266,6 +1741,20 @@ function updateModeUI() {
 
   if (!mode || !coordSystem || !doubleCase) return; // safeguard
 
+  // Sync Segmented Control Selector active state
+  const modeSelector = document.getElementById("modeSelector");
+  if (modeSelector) {
+    modeSelector.querySelectorAll(".segment-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.value === mode.value);
+    });
+  }
+
+  // Toggle Mode Classes on the grid container
+  if (topRow) {
+    topRow.classList.toggle("mode-double", mode.value === "double");
+    topRow.classList.toggle("mode-triple", mode.value === "triple");
+  }
+
   // Reset all visibility
   xMinWrap.classList.add("hidden");
   yMinWrap.classList.add("hidden");
@@ -1274,10 +1763,10 @@ function updateModeUI() {
   innerUpperWrap.classList.add("hidden");
 
   if (mode.value === "double") {
-    // Restore 3D Panel and move bottomRow to the bottom of solverTab
+    // Restore 3D Panel and move bottomRow into topRow (right side)
     if (panel3D) panel3D.style.display = "block";
-    if (bottomRow && solverTab && bottomRow.parentElement !== solverTab) {
-      solverTab.appendChild(bottomRow);
+    if (bottomRow && topRow && bottomRow.parentElement !== topRow) {
+      topRow.appendChild(bottomRow);
     }
     if (simPageSub) {
       simPageSub.textContent = "Configure your double integral parameters and visualize the bounding region in 3D space.";
@@ -1381,9 +1870,91 @@ document.querySelectorAll(".tab-btn").forEach((button) => {
   button.addEventListener("click", () => switchTab(button.dataset.tab));
 });
 
+function switchVizEngine(engine) {
+  currentVizEngine = engine;
+  
+  // Sync toggle button active states
+  const desmosBtn = document.getElementById("toggleDesmosBtn");
+  const plotlyBtn = document.getElementById("togglePlotlyBtn");
+  if (desmosBtn && plotlyBtn) {
+    desmosBtn.classList.toggle("active", engine === "desmos");
+    plotlyBtn.classList.toggle("active", engine === "plotly");
+  }
+
+  // Update container visibility and draw if we have a context
+  if (lastVizContext) {
+    renderActiveVisualization();
+  }
+}
+
+function renderActiveVisualization() {
+  if (!lastVizContext) return;
+  
+  const desmosDiv = document.getElementById("desmosDiv");
+  const viz3d = document.getElementById("viz3d");
+  const st = document.getElementById('desmosStatus');
+  const toggleGroup = document.getElementById("vizToggleGroup");
+  
+  if (st) st.style.display = 'none';
+
+  if (lastVizContext.mode === 'triple') {
+    // Triple integrals strictly use Plotly
+    if (desmosDiv) desmosDiv.style.display = 'none';
+    if (viz3d) viz3d.style.display = 'block';
+    renderTripleVisualization(lastVizContext);
+    
+    // Hide the toggle group for triple integrals since Desmos doesn't support the 3D scatter
+    if (toggleGroup) toggleGroup.style.display = 'none';
+  } else {
+    // Show toggle group for double integrals
+    if (toggleGroup) toggleGroup.style.display = 'flex';
+    
+    if (currentVizEngine === 'desmos') {
+      if (viz3d) viz3d.style.display = 'none';
+      if (desmosDiv) desmosDiv.style.display = 'block';
+      renderDesmosRegion(lastVizContext);
+    } else {
+      if (desmosDiv) desmosDiv.style.display = 'none';
+      if (viz3d) viz3d.style.display = 'block';
+      renderDoubleVisualization(lastVizContext);
+      
+      // Let Plotly resize in case container was hidden
+      setTimeout(() => {
+        if (window.Plotly) {
+          window.Plotly.Plots.resize('viz3d');
+        }
+      }, 50);
+    }
+  }
+}
+
+// Attach event listeners for the toggle buttons
+const toggleDesmosBtn = document.getElementById("toggleDesmosBtn");
+const togglePlotlyBtn = document.getElementById("togglePlotlyBtn");
+if (toggleDesmosBtn) {
+  toggleDesmosBtn.addEventListener("click", () => switchVizEngine("desmos"));
+}
+if (togglePlotlyBtn) {
+  togglePlotlyBtn.addEventListener("click", () => switchVizEngine("plotly"));
+}
+
 document.getElementById("mode").addEventListener("change", updateModeUI);
 document.getElementById("coordSystem").addEventListener("change", updateModeUI);
 document.getElementById("doubleCase").addEventListener("change", updateModeUI);
+
+// Segmented Control Event Listeners
+const modeSelectorEl = document.getElementById("modeSelector");
+if (modeSelectorEl) {
+  modeSelectorEl.querySelectorAll(".segment-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const modeInput = document.getElementById("mode");
+      if (modeInput && modeInput.value !== btn.dataset.value) {
+        modeInput.value = btn.dataset.value;
+        modeInput.dispatchEvent(new Event("change"));
+      }
+    });
+  });
+}
 
 document.getElementById("solveBtn").addEventListener("click", () => {
   const resultEl = document.getElementById("integralResult");
@@ -1419,7 +1990,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
         const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
         const stepsRes = buildStepsDouble(expr, 'polar', a, b, c, d, steps, val, 'polar', '', '');
         const isExact = stepsRes.exactVal !== null;
-        displayResult(isExact ? stepsRes.exactVal : val, `Polar · Jacobian r · ${steps}×${steps} cells`, isExact);
+        displayResult(isExact ? stepsRes.exactVal : val, `Polar · Jacobian r · ${steps}×${steps} cells`, isExact, stepsRes.customSym);
         showSteps(stepsRes.html);
         vizContext = { mode: "double", coordSystem, expr, a, b, c, d };
       } else {
@@ -1446,7 +2017,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           );
           const stepsRes = buildStepsDouble(expr, 'cartesian2d', a, b, 0, 1, steps, val, 'case1', lowExpr, upExpr);
           const isExact = stepsRes.exactVal !== null;
-          displayResult(isExact ? stepsRes.exactVal : val, `Case 1: outer x∈[${a},${b}], inner y = [g₁(x), g₂(x)]`, isExact);
+          displayResult(isExact ? stepsRes.exactVal : val, `Case 1: outer x∈[${a},${b}], inner y = [g₁(x), g₂(x)]`, isExact, stepsRes.customSym);
           showSteps(stepsRes.html);
           const cRaw = tryParseNumber("yMin", 0);
           const dRaw = tryParseNumber("yMax", 1);
@@ -1490,7 +2061,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           );
           const stepsRes = buildStepsDouble(expr, 'cartesian2d', 0, 1, c, d, steps, val, 'case2', lowExpr, upExpr);
           const isExact = stepsRes.exactVal !== null;
-          displayResult(isExact ? stepsRes.exactVal : val, `Case 2: outer y∈[${c},${d}], inner x = [h₁(y), h₂(y)]`, isExact);
+          displayResult(isExact ? stepsRes.exactVal : val, `Case 2: outer y∈[${c},${d}], inner x = [h₁(y), h₂(y)]`, isExact, stepsRes.customSym);
           showSteps(stepsRes.html);
           const aRaw = tryParseNumber("xMin", 0);
           const bRaw = tryParseNumber("xMax", 1);
@@ -1522,7 +2093,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
           const stepsRes = buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'case4', '', '');
           const isExact = stepsRes.exactVal !== null;
-          displayResult(isExact ? stepsRes.exactVal : val, `Case 4 (separable): x∈[${a},${b}], y∈[${c},${d}]`, isExact);
+          displayResult(isExact ? stepsRes.exactVal : val, `Case 4 (separable): x∈[${a},${b}], y∈[${c},${d}]`, isExact, stepsRes.customSym);
           showSteps(stepsRes.html);
           vizContext = { mode: "double", coordSystem, expr, a, b, c, d, doubleCase };
         } else {
@@ -1534,7 +2105,7 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           const val = midpointDoubleIntegral(wrapped, a, b, c, d, steps);
           const stepsRes = buildStepsDouble(expr, 'cartesian2d', a, b, c, d, steps, val, 'case3', '', '');
           const isExact = stepsRes.exactVal !== null;
-          displayResult(isExact ? stepsRes.exactVal : val, `Case 3 (rectangular): x∈[${a},${b}], y∈[${c},${d}]`, isExact);
+          displayResult(isExact ? stepsRes.exactVal : val, `Case 3 (rectangular): x∈[${a},${b}], y∈[${c},${d}]`, isExact, stepsRes.customSym);
           showSteps(stepsRes.html);
           vizContext = { mode: "double", coordSystem, expr, a, b, c, d, doubleCase };
         }
@@ -1563,9 +2134,9 @@ document.getElementById("solveBtn").addEventListener("click", () => {
         const val = midpointTripleVariableInner(wrapped, a, b, cFn, dFn, eFn, fFn, steps);
         const stepsRes = buildStepsTriple(expr, 'spherical', a, b, cRawExpr, dRawExpr, eRawExpr, fRawExpr, steps, val);
         const isExact = stepsRes.exactVal !== undefined && stepsRes.exactVal !== null;
-        displayResult(isExact ? stepsRes.exactVal : val, `Polar/Spherical · Jacobian r²sin(φ) · adaptive midpoint`, isExact);
+        displayResult(isExact ? stepsRes.exactVal : val, `Polar/Spherical · Jacobian r²sin(φ) · adaptive midpoint`, isExact, stepsRes.customSym);
         showSteps(stepsRes.html);
-        vizContext = { mode: 'triple', coordSystem, expr, a, b };
+        vizContext = { mode: 'triple', coordSystem, expr, a, b, c: 0, d: 2*Math.PI, e: 0, f: Math.PI };
       } else {
         const xMinRaw = document.getElementById('xMin').value.trim();
         const xMaxRaw = document.getElementById('xMax').value.trim();
@@ -1622,10 +2193,13 @@ document.getElementById("solveBtn").addEventListener("click", () => {
         const mappedInnerMinRaw = mapExpr(rawLimitsMap[inner].min);
         const mappedInnerMaxRaw = mapExpr(rawLimitsMap[inner].max);
 
-        const aVal = parseFloat(nerdamer(mappedOuterMinRaw).evaluate().text());
-        const bVal = parseFloat(nerdamer(mappedOuterMaxRaw).evaluate().text());
+        const aValStr = typeof nerdamer !== 'undefined' ? nerdamer(mappedOuterMinRaw).evaluate().text() : mappedOuterMinRaw;
+        const bValStr = typeof nerdamer !== 'undefined' ? nerdamer(mappedOuterMaxRaw).evaluate().text() : mappedOuterMaxRaw;
+        const aVal = parseFloat(aValStr);
+        const bVal = parseFloat(bValStr);
+        
         if (isNaN(aVal) || isNaN(bVal) || !(bVal > aVal)) {
-          throw new Error(`Outermost constant variable (${outer.toUpperCase()}) limits must evaluate to constants with max > min. Got [${mappedOuterMinRaw}, ${mappedOuterMaxRaw}]`);
+          throw new Error(`Outermost variable (${outer.toUpperCase()}) limits must evaluate to constants with max > min. Got [${mappedOuterMinRaw}, ${mappedOuterMaxRaw}]`);
         }
 
         const fn = safeCompile(mappedExpr, ['x','y','z','sin','cos','tan','sqrt','abs','exp','log','ln','pow','PI','E']);
@@ -1658,26 +2232,37 @@ document.getElementById("solveBtn").addEventListener("click", () => {
           `;
         }
 
-        displayResult(isExact ? stepsRes.exactVal : val, `Cartesian 3D · Auto-mapped [${outer}, ${middle}, ${inner}]`, isExact);
+        displayResult(isExact ? stepsRes.exactVal : val, `Cartesian 3D · Auto-mapped [${outer}, ${middle}, ${inner}]`, isExact, stepsRes.customSym);
         showSteps(mappingNoticeHtml + stepsRes.html);
-        vizContext = { mode: 'triple', coordSystem, expr, a: aVal, b: bVal };
+        
+        // Better vizContext for triple cartesian: estimate bounds for Plotly markers
+        const midR = estimateInnerRange(aVal, bVal, cFn, dFn) || { min: -1, max: 1 };
+        const innR = { min: -1, max: 1 }; // Inner (z) is harder to estimate without a 2D scan, using defaults
+        vizContext = { 
+          mode: 'triple', coordSystem, expr: mappedExpr, 
+          a: aVal, b: bVal, c: midR.min, d: midR.max, e: innR.min, f: innR.max,
+          cFn, dFn, eFn, fFn 
+        };
       }
     }
     if (vizContext) {
-      if (vizContext.mode === 'triple') {
-        const el = document.getElementById('desmosDiv');
-        const st = document.getElementById('desmosStatus');
-        if (el) el.style.display = 'none';
-        if (st) { st.style.display = 'block'; st.textContent = 'Triple integral computed numerically. See step-by-step breakdown below.'; }
-        if (desmosCalc) desmosCalc.setBlank();
-      } else {
-        renderDesmosRegion(vizContext);
-      }
+      lastVizContext = vizContext;
+      renderActiveVisualization();
     }
     // Reveal the results panel
     document.getElementById('simBottomRow').style.display = 'flex';
     document.getElementById('simBottomRow').style.flexDirection = 'column';
-    document.getElementById('simBottomRow').style.gap = '16px';
+    document.getElementById('simBottomRow').style.gap = '20px';
+    
+    const topRow = document.querySelector(".sim-top-row");
+    if (topRow) {
+      topRow.classList.add("has-results");
+    }
+    
+    // Smooth scroll to results only on smaller viewports
+    if (window.innerWidth < 1200) {
+      document.getElementById('simBottomRow').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   } catch (error) {
     document.getElementById('simBottomRow').style.display = 'flex';
     document.getElementById('simBottomRow').style.flexDirection = 'column';
@@ -1687,6 +2272,11 @@ document.getElementById("solveBtn").addEventListener("click", () => {
     document.getElementById('integralSymbolic').style.display = 'none';
     document.getElementById('stepsCard').style.display = 'none';
     clearVisualization('Graph could not be generated due to invalid input.');
+    
+    const topRow = document.querySelector(".sim-top-row");
+    if (topRow) {
+      topRow.classList.add("has-results");
+    }
   }
 });
 
@@ -1845,7 +2435,12 @@ document.getElementById("exampleBtn").addEventListener("click", () => {
   document.getElementById("integralSymbolic").style.display = "none";
   document.getElementById("stepsCard").style.display = "none";
   document.getElementById("simBottomRow").style.display = "none";
+  const topRow = document.querySelector(".sim-top-row");
+  if (topRow) {
+    topRow.classList.remove("has-results");
+  }
   clearDesmos();
+  updateMathPreview();
 });
 
 document.getElementById("resetBtn").addEventListener("click", () => {
@@ -1868,7 +2463,12 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   document.getElementById("integralSymbolic").style.display = "none";
   document.getElementById("stepsCard").style.display = "none";
   document.getElementById("simBottomRow").style.display = "none";
+  const topRow = document.querySelector(".sim-top-row");
+  if (topRow) {
+    topRow.classList.remove("has-results");
+  }
   clearDesmos();
+  updateMathPreview();
 });
 
 
@@ -1924,11 +2524,12 @@ document.getElementById("feedbackForm").addEventListener("submit", (event) => {
   `;
   event.target.reset();
 });
-
 updateModeUI();
+updateMathPreview();
 switchTab("aimTab");
 
 document.getElementById('stepsToggle').addEventListener('click', () => {
+
   const head    = document.getElementById('stepsToggle');
   const content = document.getElementById('stepsContent');
   const collapsed = head.classList.toggle('collapsed');
